@@ -228,7 +228,7 @@ namespace Language_zh_TW {
   LSTR MSG_MOVE_10MM                      = _UxGT("移動 10 mm");     // "Move 10mm"
   LSTR MSG_MOVE_50MM                      = _UxGT("移動 50 mm");     // "Move 50mm"
   LSTR MSG_MOVE_100MM                     = _UxGT("移動 100 mm");    // "Move 100mm"
-  LSTR MSG_SPEED                          = _UxGT("速率");     // "Speed"
+  LSTR MSG_SPEED                          = _UxGT("速度");     // "Speed"
   LSTR MSG_BED_Z                          = _UxGT("熱床Z");     // "Bed Z"
   LSTR MSG_NOZZLE                         = " " LCD_STR_THERMOMETER _UxGT(" 噴嘴");     // "Nozzle" 噴嘴
   LSTR MSG_NOZZLE_N                       = " " LCD_STR_THERMOMETER _UxGT(" 噴嘴 ~");
@@ -385,7 +385,7 @@ namespace Language_zh_TW {
   LSTR MSG_THERMAL_RUNAWAY_BED            = _UxGT("熱床溫度失控");    // "BED THERMAL RUNAWAY"
   LSTR MSG_THERMAL_RUNAWAY_CHAMBER        = _UxGT("機箱溫度失控");   // "CHAMBER T. RUNAWAY"
   LSTR MSG_ERR_MAXTEMP                    = _UxGT("錯誤：最高溫度");     // "Err: MAXTEMP"
-  LSTR MSG_ERR_MINTEMP                    = _UxGT("錯誤：最低溫度");     // "Err: MINTEMP"
+  LSTR MSG_ERR_MINTEMP                    = _UxGT("錯誤：最低溫度1");     // "Err: MINTEMP"
   LSTR MSG_HALTED                         = _UxGT("印表機停機");     // "PRINTER HALTED"
   LSTR MSG_PLEASE_RESET                   = _UxGT("請重置");     // "Please reset"
   LSTR MSG_SHORT_DAY                      = _UxGT("天");     // "d" // One character only

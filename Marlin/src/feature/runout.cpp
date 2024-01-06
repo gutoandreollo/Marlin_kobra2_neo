@@ -32,6 +32,8 @@
 
 FilamentMonitor runout;
 
+uint8_t FilamentSensorBase::state_original = FIL_RUNOUT_STATE;
+
 bool FilamentMonitorBase::enabled = true,
      FilamentMonitorBase::filament_ran_out;  // = false
 
@@ -52,7 +54,7 @@ bool FilamentMonitorBase::enabled = true,
     uint8_t FilamentSensorEncoder::motion_detected;
   #endif
 #else
-  int8_t RunoutResponseDebounced::runout_count[NUM_RUNOUT_SENSORS]; // = 0
+  int16_t RunoutResponseDebounced::runout_count[NUM_RUNOUT_SENSORS]; // = 0
 #endif
 
 //
@@ -61,6 +63,7 @@ bool FilamentMonitorBase::enabled = true,
 #include "../MarlinCore.h"
 #include "../feature/pause.h"
 #include "../gcode/queue.h"
+#include "../lcd/marlinui.h"
 
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "host_actions.h"
@@ -126,21 +129,24 @@ void event_filament_runout(const uint8_t extruder) {
     SERIAL_EOL();
   #endif // HOST_ACTION_COMMANDS
 
-  if (run_runout_script) {
-    #if MULTI_FILAMENT_SENSOR
-      char script[strlen(FILAMENT_RUNOUT_SCRIPT) + 1];
-      sprintf_P(script, PSTR(FILAMENT_RUNOUT_SCRIPT), tool);
-      #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)
-        SERIAL_ECHOLNPGM("Runout Command: ", script);
-      #endif
-      queue.inject(script);
-    #else
-      #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)
-        SERIAL_ECHOPGM("Runout Command: ");
-        SERIAL_ECHOLNPGM(FILAMENT_RUNOUT_SCRIPT);
-      #endif
-      queue.inject(F(FILAMENT_RUNOUT_SCRIPT));
-    #endif
+//  if (run_runout_script) {
+//    #if MULTI_FILAMENT_SENSOR
+//      char script[strlen(FILAMENT_RUNOUT_SCRIPT) + 1];
+//      sprintf_P(script, PSTR(FILAMENT_RUNOUT_SCRIPT), tool);
+//      #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)
+//        SERIAL_ECHOLNPGM("Runout Command: ", script);
+//      #endif
+//      queue.inject(script);
+//    #else
+//      #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)
+//        SERIAL_ECHOPGM("Runout Command: ");
+//        SERIAL_ECHOLNPGM(FILAMENT_RUNOUT_SCRIPT);
+//      #endif
+//      queue.inject(F(FILAMENT_RUNOUT_SCRIPT));        
+//    #endif
+    if (run_runout_script) {
+		//SERIAL_ECHOLNPGM("pause print");
+		ui.pause_print();
   }
 }
 

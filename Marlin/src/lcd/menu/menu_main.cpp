@@ -25,6 +25,7 @@
 //
 
 #include "../../inc/MarlinConfigPre.h"
+#include "../../HAL/STM32/autoGetZoffset.h"
 
 #if HAS_MARLINUI_MENU
 
@@ -71,7 +72,7 @@ void menu_cancelobject();
 void menu_motion();
 void menu_temperature();
 void menu_configuration();
-
+void _lcd_level_bed_continue();
 #if HAS_POWER_MONITOR
   void menu_power_monitor();
 #endif
@@ -232,274 +233,397 @@ void menu_configuration();
   #endif
 #endif
 
+void filament_change(){
+
+	START_MENU();
+	BACK_ITEM(MSG_BACK);
+	
+	SUBMENU(MSG_FILAMENTUNLOAD,[]{ unloaOrloaddfilamentstate = true; filament_cmd = FILA_OUT; _menu_move_distance_e_maybe();});
+  	SUBMENU(MSG_FILAMENTLOAD, []{ unloaOrloaddfilamentstate = true; filament_cmd = FILA_IN; _menu_move_distance_e_maybe();});
+	
+	END_MENU();
+
+}
+
+
+static bool is_calibration = false;
+void move_calibration()
+{
+
+ if( !axis_is_trusted(X_AXIS) || !axis_is_trusted(Y_AXIS)){
+	  queue.inject_P(PSTR("G28\n M2000"));
+  }
+  else{
+    queue.inject_P(PSTR("M2000"));
+  }
+  calibration_state = true;
+  LCD_MESSAGE(MSG_CALIBRATION_START);
+}
+void save_calibration(){
+  queue.inject_P(PSTR("M2003 W"));
+}
+
+void menu_calibration(){
+
+
+  START_MENU();
+  BACK_ITEM(MSG_BACK);
+  ACTION_ITEM(MSG_POSITION_CALIBRATION, move_calibration);
+  ACTION_ITEM(MSG_BUTTON_SAVE, save_calibration);
+  
+  SUBMENU_N(X_AXIS, MSG_MOVE_X_1MM,  []{ soft_endstop._enabled = false; ui.module_calibration_flag = true;  ui.manual_move.menu_scale = 1;    lcd_move_axis(X_AXIS); });
+  SUBMENU_N(X_AXIS, MSG_MOVE_X_01MM, []{ soft_endstop._enabled = false; ui.module_calibration_flag = true;  ui.manual_move.menu_scale = 0.1; lcd_move_axis(X_AXIS); });
+
+  SUBMENU_N(Y_AXIS, MSG_MOVE_Y_1MM,  []{ soft_endstop._enabled = false; ui.module_calibration_flag = true;  ui.manual_move.menu_scale = 1;    lcd_move_axis(Y_AXIS); });
+  SUBMENU_N(Y_AXIS, MSG_MOVE_Y_01MM, []{ soft_endstop._enabled = false; ui.module_calibration_flag = true;  ui.manual_move.menu_scale = 0.1; lcd_move_axis(Y_AXIS); });
+
+	
+  END_MENU();
+}
+
+
+
+void lcd_level_command()
+{
+	autoProbe.swtich_cool_fan = true;
+	ui.setzoffset(0);
+	gcode.process_subcommands_now(F("G28XY"));
+    ui.lcdLeveingstate = LEVEING_HEATING;
+    queue.inject_P(PSTR("G28\nG29"));
+	ui.clear_all = true;
+   	ui.goto_screen(lcd_level_top_windown);
+	ui.clear_all = false;
+}
+
+
+void lcd_level_task(){
+	ui.defer_status_screen();
+	const bool ui_selection = ui.update_selection(), got_click = ui.use_click();
+	if (got_click || ui.should_draw()) {
+	  ui.last_confirm_windown_enabled = ui.confirm_windown_enabled;
+      ui.confirm_windown_enabled = true;
+	  MenuItem_confirm::draw_select_screen(
+      GET_TEXT_F(MSG_BUTTON_STOP), GET_TEXT_F(MSG_BACK), 
+      ui_selection,
+      GET_TEXT_F(MSG_LEVEL_BED), (const char *)nullptr,nullptr
+      );
+	  if (got_click) {
+	  	 ui.confirm_windown_enabled = false;
+		selectFunc_t callFunc = !ui_selection ? lcd_level_command : nullptr;
+		if (callFunc) {
+			did_pause_print = 0; //
+			callFunc();
+		}
+		else
+		{
+			 ui.goto_previous_screen();
+			 ui.previous_callbackFunc();
+		}
+	  }
+	}	
+}
+
 void menu_main() {
-  const bool busy = printingIsActive()
-    #if ENABLED(SDSUPPORT)
-      , card_detected = card.isMounted()
-      , card_open = card_detected && card.isFileOpen()
-    #endif
-  ;
+  // const bool busy = printingIsActive()
+  //   #if ENABLED(SDSUPPORT)
+  //     , card_detected = card.isMounted()
+  //     , card_open = card_detected && card.isFileOpen()
+  //   #endif
+  // ;
 
   START_MENU();
   BACK_ITEM(MSG_INFO_SCREEN);
 
-  #if ENABLED(SDSUPPORT) && !defined(MEDIA_MENU_AT_TOP) && !HAS_ENCODER_WHEEL
-    #define MEDIA_MENU_AT_TOP
-  #endif
+  //
+  // Disable Steppers
+  //
+  GCODES_ITEM(MSG_DISABLE_STEPPERS, F("M84"));
 
-  if (busy) {
-    #if MACHINE_CAN_PAUSE
-      ACTION_ITEM(MSG_PAUSE_PRINT, ui.pause_print);
-    #endif
-    #if MACHINE_CAN_STOP
-      SUBMENU(MSG_STOP_PRINT, []{
-        MenuItem_confirm::select_screen(
-          GET_TEXT_F(MSG_BUTTON_STOP), GET_TEXT_F(MSG_BACK),
-          ui.abort_print, nullptr,
-          GET_TEXT_F(MSG_STOP_PRINT), (const char *)nullptr, F("?")
-        );
-      });
-    #endif
-
-    #if ENABLED(GCODE_REPEAT_MARKERS)
-      if (repeat.is_active())
-        ACTION_ITEM(MSG_END_LOOPS, repeat.cancel);
-    #endif
-
-    SUBMENU(MSG_TUNE, menu_tune);
-
-    #if ENABLED(CANCEL_OBJECTS) && DISABLED(SLIM_LCD_MENUS)
-      SUBMENU(MSG_CANCEL_OBJECT, []{ editable.int8 = -1; ui.goto_screen(menu_cancelobject); });
-    #endif
-  }
-  else {
-    #if BOTH(SDSUPPORT, MEDIA_MENU_AT_TOP)
-      // BEGIN MEDIA MENU
-      #if ENABLED(MENU_ADDAUTOSTART)
-        ACTION_ITEM(MSG_RUN_AUTO_FILES, card.autofile_begin); // Run Auto Files
-      #endif
-
-      if (card_detected) {
-        if (!card_open) {
-          #if HAS_SD_DETECT
-            GCODES_ITEM(MSG_CHANGE_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Change Media
-            #if ENABLED(MULTI_VOLUME)
-              GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U")); // M21 Attach USB Media
-            #endif
-          #else                                             // - or -
-            ACTION_ITEM(MSG_RELEASE_MEDIA, []{              // M22 Release Media
-              queue.inject(F("M22"));
-              #if ENABLED(TFT_COLOR_UI)
-                // Menu display issue on item removal with multi language selection menu
-                if (encoderTopLine > 0) encoderTopLine--;
-                ui.refresh(LCDVIEW_CALL_REDRAW_NEXT);
-              #endif
-            });
-          #endif
-          SUBMENU(MSG_MEDIA_MENU, MEDIA_MENU_GATEWAY);      // Media Menu (or Password First)
-        }
-      }
-      else {
-        #if HAS_SD_DETECT
-          ACTION_ITEM(MSG_NO_MEDIA, nullptr);               // "No Media"
-        #else
-          GCODES_ITEM(MSG_ATTACH_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Attach Media
-          #if ENABLED(MULTI_VOLUME)
-            GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U"));   // M21 Attach USB Media
-          #endif
-        #endif
-      }
-      // END MEDIA MENU
-    #endif
-
-    if (TERN0(MACHINE_CAN_PAUSE, printingIsPaused()))
-      ACTION_ITEM(MSG_RESUME_PRINT, ui.resume_print);
-
-    #if ENABLED(HOST_START_MENU_ITEM) && defined(ACTION_ON_START)
-      ACTION_ITEM(MSG_HOST_START_PRINT, hostui.start);
-    #endif
-
-    #if ENABLED(PREHEAT_SHORTCUT_MENU_ITEM)
-      SUBMENU(MSG_PREHEAT_CUSTOM, menu_preheat_only);
-    #endif
-
-    SUBMENU(MSG_MOTION, menu_motion);
+	//
+  // Move XYZ Axis
+  //
+  if (TERN1(DELTA, all_axes_homed())){
+      SUBMENU(MSG_MOVE_AXIS, menu_move);
   }
 
-  #if BOTH(ADVANCED_PAUSE_FEATURE, DISABLE_ENCODER)
-    FILAMENT_CHANGE_ITEM();
-  #endif
-
-  #if HAS_CUTTER
-    SUBMENU(MSG_CUTTER(MENU), STICKY_SCREEN(menu_spindle_laser));
-  #endif
-
-  #if HAS_TEMPERATURE
-    SUBMENU(MSG_TEMPERATURE, menu_temperature);
-  #endif
-
-  #if HAS_POWER_MONITOR
-    SUBMENU(MSG_POWER_MONITOR, menu_power_monitor);
-  #endif
-
-  #if ENABLED(MIXING_EXTRUDER)
-    SUBMENU(MSG_MIXER, menu_mixer);
-  #endif
-
-  #if ENABLED(MMU2_MENUS)
-    if (!busy) SUBMENU(MSG_MMU2_MENU, menu_mmu2);
-  #endif
-
-  SUBMENU(MSG_CONFIGURATION, menu_configuration);
-
-  #if ENABLED(CUSTOM_MENU_MAIN)
-    if (TERN1(CUSTOM_MENU_MAIN_ONLY_IDLE, !busy)) {
-      #ifdef CUSTOM_MENU_MAIN_TITLE
-        SUBMENU_F(F(CUSTOM_MENU_MAIN_TITLE), custom_menus_main);
-      #else
-        SUBMENU(MSG_CUSTOM_COMMANDS, custom_menus_main);
-      #endif
-    }
-  #endif
-
-  #if ENABLED(LCD_INFO_MENU)
-    SUBMENU(MSG_INFO_MENU, menu_info);
-  #endif
-
-  #if EITHER(LED_CONTROL_MENU, CASE_LIGHT_MENU)
-    SUBMENU(MSG_LEDS, menu_led);
-  #endif
+  //
+  // Move E Axis
+  //
+ SUBMENU(MSG_FILAMENTCHANGE,filament_change);
 
   //
-  // Switch power on/off
+  // Auto Leving
   //
-  #if ENABLED(PSU_CONTROL)
-    if (powerManager.psu_on)
-      #if ENABLED(PS_OFF_CONFIRM)
-        CONFIRM_ITEM(MSG_SWITCH_PS_OFF,
-          MSG_YES, MSG_NO,
-          ui.poweroff, nullptr,
-          GET_TEXT_F(MSG_SWITCH_PS_OFF), (const char *)nullptr, F("?")
-        );
-      #else
-        ACTION_ITEM(MSG_SWITCH_PS_OFF, ui.poweroff);
-      #endif
-    else
-      GCODES_ITEM(MSG_SWITCH_PS_ON, F("M80"));
-  #endif
+  
+  SUBMENU(MSG_LEVEL_BED, lcd_level_task);
 
-  #if ENABLED(SDSUPPORT) && DISABLED(MEDIA_MENU_AT_TOP)
-    // BEGIN MEDIA MENU
-    #if ENABLED(MENU_ADDAUTOSTART)
-      ACTION_ITEM(MSG_RUN_AUTO_FILES, card.autofile_begin); // Run Auto Files
-    #endif
+  //
+  // module calibration
+  //
+  SUBMENU(MSG_MODULE_CALIBRATION, menu_calibration);
+  //
+  // More Configuration
+  //
+  SUBMENU(MSG_MORE_CONFIG, menu_configuration);
 
-    if (card_detected) {
-      if (!card_open) {
-        #if HAS_SD_DETECT
-          GCODES_ITEM(MSG_CHANGE_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Change Media
-          #if ENABLED(MULTI_VOLUME)
-            GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U")); // M21 Attach USB Media
-          #endif
-        #else                                             // - or -
-          ACTION_ITEM(MSG_RELEASE_MEDIA, []{              // M22 Release Media
-            queue.inject(F("M22"));
-            #if ENABLED(TFT_COLOR_UI)
-              // Menu display issue on item removal with multi language selection menu
-              if (encoderTopLine > 0) encoderTopLine--;
-              ui.refresh(LCDVIEW_CALL_REDRAW_NEXT);
-            #endif
-          });
-        #endif
-        SUBMENU(MSG_MEDIA_MENU, MEDIA_MENU_GATEWAY);      // Media Menu (or Password First)
-      }
-    }
-    else {
-      #if HAS_SD_DETECT
-        ACTION_ITEM(MSG_NO_MEDIA, nullptr);               // "No Media"
-      #else
-        GCODES_ITEM(MSG_ATTACH_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Attach Media
-        #if ENABLED(MULTI_VOLUME)
-          GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U"));   // M21 Attach USB Media
-        #endif
-      #endif
-    }
-    // END MEDIA MENU
-  #endif
-
-  #if HAS_SERVICE_INTERVALS
-    static auto _service_reset = [](const int index) {
-      print_job_timer.resetServiceInterval(index);
-      ui.completion_feedback();
-      ui.reset_status();
-      ui.return_to_status();
-    };
-    #if SERVICE_INTERVAL_1 > 0
-      CONFIRM_ITEM_F(F(SERVICE_NAME_1),
-        MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
-        []{ _service_reset(1); }, nullptr,
-        GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_1), F("?")
-      );
-    #endif
-    #if SERVICE_INTERVAL_2 > 0
-      CONFIRM_ITEM_F(F(SERVICE_NAME_2),
-        MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
-        []{ _service_reset(2); }, nullptr,
-        GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_2), F("?")
-      );
-    #endif
-    #if SERVICE_INTERVAL_3 > 0
-      CONFIRM_ITEM_F(F(SERVICE_NAME_3),
-        MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
-        []{ _service_reset(3); }, nullptr,
-        GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_3), F("?")
-      );
-    #endif
-  #endif
-
-  #if HAS_GAMES && DISABLED(LCD_INFO_MENU)
-    #if ENABLED(GAMES_EASTER_EGG)
-      SKIP_ITEM();
-      SKIP_ITEM();
-      SKIP_ITEM();
-    #endif
-    // Game sub-menu or the individual game
-    {
-      SUBMENU(
-        #if HAS_GAME_MENU
-          MSG_GAMES, menu_game
-        #elif ENABLED(MARLIN_BRICKOUT)
-          MSG_BRICKOUT, brickout.enter_game
-        #elif ENABLED(MARLIN_INVADERS)
-          MSG_INVADERS, invaders.enter_game
-        #elif ENABLED(MARLIN_SNAKE)
-          MSG_SNAKE, snake.enter_game
-        #elif ENABLED(MARLIN_MAZE)
-          MSG_MAZE, maze.enter_game
-        #endif
-      );
-    }
-  #endif
-
-  #if HAS_MULTI_LANGUAGE
-    SUBMENU(LANGUAGE, menu_language);
-  #endif
-
-  #if ENABLED(HOST_SHUTDOWN_MENU_ITEM) && defined(SHUTDOWN_ACTION)
-    SUBMENU(MSG_HOST_SHUTDOWN, []{
-      MenuItem_confirm::select_screen(
-        GET_TEXT_F(MSG_BUTTON_PROCEED), GET_TEXT_F(MSG_BUTTON_CANCEL),
-        []{ ui.return_to_status(); hostui.shutdown(); }, nullptr,
-        GET_TEXT_F(MSG_HOST_SHUTDOWN), (const char *)nullptr, F("?")
-      );
-    });
-  #endif
-
-  #if ENABLED(ADVANCED_PAUSE_FEATURE) && DISABLED(DISABLE_ENCODER)
-    FILAMENT_CHANGE_ITEM();
-  #endif
 
   END_MENU();
+
+//   #if ENABLED(SDSUPPORT) && !defined(MEDIA_MENU_AT_TOP) && !HAS_ENCODER_WHEEL
+//     #define MEDIA_MENU_AT_TOP
+//   #endif
+
+//   if (busy) {
+//     #if MACHINE_CAN_PAUSE
+//       ACTION_ITEM(MSG_PAUSE_PRINT, ui.pause_print);
+//     #endif
+//     #if MACHINE_CAN_STOP
+//       SUBMENU(MSG_STOP_PRINT, []{
+//         MenuItem_confirm::select_screen(
+//           GET_TEXT_F(MSG_BUTTON_STOP), GET_TEXT_F(MSG_BACK),
+//           ui.abort_print, nullptr,
+//           GET_TEXT_F(MSG_STOP_PRINT), (const char *)nullptr, F("?")
+//         );
+//       });
+//     #endif
+
+//     #if ENABLED(GCODE_REPEAT_MARKERS)
+//       if (repeat.is_active())
+//         ACTION_ITEM(MSG_END_LOOPS, repeat.cancel);
+//     #endif
+
+//     SUBMENU(MSG_TUNE, menu_tune);
+
+//     #if ENABLED(CANCEL_OBJECTS) && DISABLED(SLIM_LCD_MENUS)
+//       SUBMENU(MSG_CANCEL_OBJECT, []{ editable.int8 = -1; ui.goto_screen(menu_cancelobject); });
+//     #endif
+//   }
+//   else {
+//     #if BOTH(SDSUPPORT, MEDIA_MENU_AT_TOP)
+//       // BEGIN MEDIA MENU
+//       #if ENABLED(MENU_ADDAUTOSTART)
+//         ACTION_ITEM(MSG_RUN_AUTO_FILES, card.autofile_begin); // Run Auto Files
+//       #endif
+
+//       if (card_detected) {
+//         if (!card_open) {
+//           #if HAS_SD_DETECT
+//             GCODES_ITEM(MSG_CHANGE_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Change Media
+//             #if ENABLED(MULTI_VOLUME)
+//               GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U")); // M21 Attach USB Media
+//             #endif
+//           #else                                             // - or -
+//             ACTION_ITEM(MSG_RELEASE_MEDIA, []{              // M22 Release Media
+//               queue.inject(F("M22"));
+//               #if ENABLED(TFT_COLOR_UI)
+//                 // Menu display issue on item removal with multi language selection menu
+//                 if (encoderTopLine > 0) encoderTopLine--;
+//                 ui.refresh(LCDVIEW_CALL_REDRAW_NEXT);
+//               #endif
+//             });
+//           #endif
+//           SUBMENU(MSG_MEDIA_MENU, MEDIA_MENU_GATEWAY);      // Media Menu (or Password First)
+//         }
+//       }
+//       else {
+//         #if HAS_SD_DETECT
+//           ACTION_ITEM(MSG_NO_MEDIA, nullptr);               // "No Media"
+//         #else
+//           GCODES_ITEM(MSG_ATTACH_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Attach Media
+//           #if ENABLED(MULTI_VOLUME)
+//             GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U"));   // M21 Attach USB Media
+//           #endif
+//         #endif
+//       }
+//       // END MEDIA MENU
+//     #endif
+
+//     if (TERN0(MACHINE_CAN_PAUSE, printingIsPaused()))
+//       ACTION_ITEM(MSG_RESUME_PRINT, ui.resume_print);
+
+//     #if ENABLED(HOST_START_MENU_ITEM) && defined(ACTION_ON_START)
+//       ACTION_ITEM(MSG_HOST_START_PRINT, hostui.start);
+//     #endif
+
+//     #if ENABLED(PREHEAT_SHORTCUT_MENU_ITEM)
+//       SUBMENU(MSG_PREHEAT_CUSTOM, menu_preheat_only);
+//     #endif
+
+//     //SUBMENU(MSG_MOTION, menu_motion);
+
+   
+//   #if BOTH(ADVANCED_PAUSE_FEATURE, DISABLE_ENCODER)
+//     FILAMENT_CHANGE_ITEM();
+//   #endif
+
+//   #if HAS_CUTTER
+//     SUBMENU(MSG_CUTTER(MENU), STICKY_SCREEN(menu_spindle_laser));
+//   #endif
+
+//   #if HAS_TEMPERATURE
+//     SUBMENU(MSG_TEMPERATURE, menu_temperature);
+//   #endif
+
+//   #if HAS_POWER_MONITOR
+//     SUBMENU(MSG_POWER_MONITOR, menu_power_monitor);
+//   #endif
+
+//   #if ENABLED(MIXING_EXTRUDER)
+//     SUBMENU(MSG_MIXER, menu_mixer);
+//   #endif
+
+//   #if ENABLED(MMU2_MENUS)
+//     if (!busy) SUBMENU(MSG_MMU2_MENU, menu_mmu2);
+//   #endif
+  
+//   #if ENABLED(CUSTOM_MENU_MAIN)
+//     if (TERN1(CUSTOM_MENU_MAIN_ONLY_IDLE, !busy)) {
+//       #ifdef CUSTOM_MENU_MAIN_TITLE
+//         SUBMENU_F(F(CUSTOM_MENU_MAIN_TITLE), custom_menus_main);
+//       #else
+//         SUBMENU(MSG_CUSTOM_COMMANDS, custom_menus_main);
+//       #endif
+//     }
+//   #endif
+
+//   #if ENABLED(LCD_INFO_MENU)
+//     SUBMENU(MSG_INFO_MENU, menu_info);
+//   #endif
+
+//   #if EITHER(LED_CONTROL_MENU, CASE_LIGHT_MENU)
+//     SUBMENU(MSG_LEDS, menu_led);
+//   #endif
+
+//   //
+//   // Switch power on/off
+//   //
+//   #if ENABLED(PSU_CONTROL)
+//     if (powerManager.psu_on)
+//       #if ENABLED(PS_OFF_CONFIRM)
+//         CONFIRM_ITEM(MSG_SWITCH_PS_OFF,
+//           MSG_YES, MSG_NO,
+//           ui.poweroff, nullptr,
+//           GET_TEXT_F(MSG_SWITCH_PS_OFF), (const char *)nullptr, F("?")
+//         );
+//       #else
+//         ACTION_ITEM(MSG_SWITCH_PS_OFF, ui.poweroff);
+//       #endif
+//     else
+//       GCODES_ITEM(MSG_SWITCH_PS_ON, F("M80"));
+//   #endif
+
+//   #if ENABLED(SDSUPPORT) && DISABLED(MEDIA_MENU_AT_TOP)
+//     // BEGIN MEDIA MENU
+//     #if ENABLED(MENU_ADDAUTOSTART)
+//       ACTION_ITEM(MSG_RUN_AUTO_FILES, card.autofile_begin); // Run Auto Files
+//     #endif
+
+//    if (card_detected) {
+//      if (!card_open) {
+//        #if HAS_SD_DETECT
+//          //GCODES_ITEM(MSG_CHANGE_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Change Media
+//          #if ENABLED(MULTI_VOLUME)
+//            GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U")); // M21 Attach USB Media
+//          #endif
+//        #else                                             // - or -
+//          ACTION_ITEM(MSG_RELEASE_MEDIA, []{              // M22 Release Media
+//            queue.inject(F("M22"));
+//            #if ENABLED(TFT_COLOR_UI)
+//              // Menu display issue on item removal with multi language selection menu
+//              if (encoderTopLine > 0) encoderTopLine--;
+//              ui.refresh(LCDVIEW_CALL_REDRAW_NEXT);
+//            #endif
+//          });
+//        #endif
+//        //SUBMENU(MSG_MEDIA_MENU, MEDIA_MENU_GATEWAY);      // Media Menu (or Password First)
+//      }
+//    }
+//    else {
+//      #if HAS_SD_DETECT
+//        ACTION_ITEM(MSG_NO_MEDIA, nullptr);               // "No Media"
+//      #else
+//        GCODES_ITEM(MSG_ATTACH_MEDIA, F("M21" TERN_(MULTI_VOLUME, "S"))); // M21 Attach Media
+//        #if ENABLED(MULTI_VOLUME)
+//          GCODES_ITEM(MSG_ATTACH_USB_MEDIA, F("M21U"));   // M21 Attach USB Media
+//        #endif
+//      #endif
+//    }
+//     // END MEDIA MENU
+//   #endif
+
+//   #if HAS_SERVICE_INTERVALS
+//     static auto _service_reset = [](const int index) {
+//       print_job_timer.resetServiceInterval(index);
+//       ui.completion_feedback();
+//       ui.reset_status();
+//       ui.return_to_status();
+//     };
+//     #if SERVICE_INTERVAL_1 > 0
+//       CONFIRM_ITEM_F(F(SERVICE_NAME_1),
+//         MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
+//         []{ _service_reset(1); }, nullptr,
+//         GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_1), F("?")
+//       );
+//     #endif
+//     #if SERVICE_INTERVAL_2 > 0
+//       CONFIRM_ITEM_F(F(SERVICE_NAME_2),
+//         MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
+//         []{ _service_reset(2); }, nullptr,
+//         GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_2), F("?")
+//       );
+//     #endif
+//     #if SERVICE_INTERVAL_3 > 0
+//       CONFIRM_ITEM_F(F(SERVICE_NAME_3),
+//         MSG_BUTTON_RESET, MSG_BUTTON_CANCEL,
+//         []{ _service_reset(3); }, nullptr,
+//         GET_TEXT_F(MSG_SERVICE_RESET), F(SERVICE_NAME_3), F("?")
+//       );
+//     #endif
+//   #endif
+
+//   #if HAS_GAMES && DISABLED(LCD_INFO_MENU)
+//     #if ENABLED(GAMES_EASTER_EGG)
+//       SKIP_ITEM();
+//       SKIP_ITEM();
+//       SKIP_ITEM();
+//     #endif
+//     // Game sub-menu or the individual game
+//     {
+//       SUBMENU(
+//         #if HAS_GAME_MENU
+//           MSG_GAMES, menu_game
+//         #elif ENABLED(MARLIN_BRICKOUT)
+//           MSG_BRICKOUT, brickout.enter_game
+//         #elif ENABLED(MARLIN_INVADERS)
+//           MSG_INVADERS, invaders.enter_game
+//         #elif ENABLED(MARLIN_SNAKE)
+//           MSG_SNAKE, snake.enter_game
+//         #elif ENABLED(MARLIN_MAZE)
+//           MSG_MAZE, maze.enter_game
+//         #endif
+//       );
+//     }
+//   #endif
+
+// //  #if HAS_MULTI_LANGUAGE
+// //    SUBMENU(LANGUAGE, menu_language);
+// //  #endif
+
+//   #if ENABLED(HOST_SHUTDOWN_MENU_ITEM) && defined(SHUTDOWN_ACTION)
+//     SUBMENU(MSG_HOST_SHUTDOWN, []{
+//       MenuItem_confirm::select_screen(
+//         GET_TEXT_F(MSG_BUTTON_PROCEED), GET_TEXT_F(MSG_BUTTON_CANCEL),
+//         []{ ui.return_to_status(); hostui.shutdown(); }, nullptr,
+//         GET_TEXT_F(MSG_HOST_SHUTDOWN), (const char *)nullptr, F("?")
+//       );
+//     });
+//   #endif
+
+//  #if ENABLED(ADVANCED_PAUSE_FEATURE) && DISABLED(DISABLE_ENCODER)
+//    FILAMENT_CHANGE_ITEM();
+//  #endif
+//
+  
 }
 
 #endif // HAS_MARLINUI_MENU

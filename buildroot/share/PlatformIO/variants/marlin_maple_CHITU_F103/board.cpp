@@ -112,8 +112,6 @@ extern const stm32_pin_info PIN_MAP[BOARD_NR_GPIO_PINS] = {
   {&gpiob,   NULL, NULL, 13, 0, ADCx}, /* PB13 */
   {&gpiob,   NULL, NULL, 14, 0, ADCx}, /* PB14 */
   {&gpiob,   NULL, NULL, 15, 0, ADCx}, /* PB15 */
-
-
   {&gpioc,   NULL, &adc1,  0, 0,   10}, /* PC0 */
   {&gpioc,   NULL, &adc1,  1, 0,   11}, /* PC1 */
   {&gpioc,   NULL, &adc1,  2, 0,   12}, /* PC2 */

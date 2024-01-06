@@ -21,9 +21,11 @@
  */
 
 #include "../../inc/MarlinConfigPre.h"
+#include "../tft_io/tft_io.h"
 
 #if HAS_UI_320x240
 
+#include "./images/bsp_logo_data.h"
 #include "ui_common.h"
 
 #include "../marlinui.h"
@@ -64,28 +66,83 @@ void MarlinUI::tft_idle() {
 }
 
 #if ENABLED(SHOW_BOOTSCREEN)
+  void TFT::color_change(){
+  	static millis_t change_ms = 0;
+	static bool next_color = 0;
 
+	if(ELAPSED(millis(), change_ms)){
+		change_ms = millis() + 2000;
+		next_color = !next_color;
+		if(next_color)
+			io.WriteMultiple(0x1234,76800);
+		else
+			io.WriteMultiple(0x0000,76800);
+	}
+
+
+  }
+  void TFT::show_ancubic_log(){
+
+    set_window(0,0,320,240);
+	io.DataTransferBegin();
+    // write_multiple(0x1234,76800);
+    // //tft.queue.sync();
+    // while (1)
+    // {
+    //   /* code */
+    // }
+    
+		uint8_t p;
+    uint8_t  R1,G1,V1; 
+		for(uint32_t i = 0;i<76800;i++)
+		{
+			p = _ac[i];
+      R1=GUI_COLOR_Colors4[p]>>16;
+      G1=(GUI_COLOR_Colors4[p]>>8)&0xff;
+      V1=(GUI_COLOR_Colors4[p])&0xFF;
+    
+      R1=R1>>3;
+      G1=G1>>2;
+      V1=V1>>3;
+			io.WriteData((V1<<11)+ (G1<<5)+R1);
+      p++;
+		}
+    //io.DataTransferEnd();
+	
+  }
+  void MarlinUI::color_change(){
+    tft.color_change();
+  }
   void MarlinUI::show_bootscreen() {
-    tft.queue.reset();
 
-    tft.canvas(0, 0, TFT_WIDTH, TFT_HEIGHT);
-    #if ENABLED(BOOT_MARLIN_LOGO_SMALL)
-      #define BOOT_LOGO_W 195   // MarlinLogo195x59x16
-      #define BOOT_LOGO_H  59
-      #define SITE_URL_Y (TFT_HEIGHT - 48)
-      tft.set_background(COLOR_BACKGROUND);
-    #else
-      #define BOOT_LOGO_W TFT_WIDTH   // MarlinLogo320x240x16
-      #define BOOT_LOGO_H TFT_HEIGHT
-      #define SITE_URL_Y (TFT_HEIGHT - 54)
-    #endif
-    tft.add_image((TFT_WIDTH - BOOT_LOGO_W) / 2, (TFT_HEIGHT - BOOT_LOGO_H) / 2, imgBootScreen);
-    #ifdef WEBSITE_URL
-      tft_string.set(WEBSITE_URL);
-      tft.add_text(tft_string.center(TFT_WIDTH), SITE_URL_Y, COLOR_WEBSITE_URL, tft_string);
-    #endif
+  SERIAL_ECHOLN("show_bootscreen");
+ 
+	tft.show_ancubic_log();
+	hal.delay_ms(500);
+  	WRITE(TFT_BACKLIGHT_PIN, HIGH);
 
-    tft.queue.sync();
+  // tft.queue.reset();
+  // tft.canvas(0, 0, TFT_WIDTH, TFT_HEIGHT);
+   
+  // WRITE(TFT_BACKLIGHT_PIN, HIGH);
+  //   #if ENABLED(BOOT_MARLIN_LOGO_SMALL)
+  //     #define BOOT_LOGO_W  137   // MarlinLogo195x59x16
+  //     #define BOOT_LOGO_H  137
+  //     #define SITE_URL_Y (TFT_HEIGHT - 48)
+  //     tft.set_background(COLOR_BACKGROUND);
+  //   #else
+  //     #define BOOT_LOGO_W TFT_WIDTH   // MarlinLogo320x240x16
+  //     #define BOOT_LOGO_H TFT_HEIGHT
+  //     #define SITE_URL_Y (TFT_HEIGHT - 54)
+  //   #endif
+  //    tft.add_image((TFT_WIDTH - BOOT_LOGO_W) / 2, (TFT_HEIGHT - BOOT_LOGO_H) / 2, imgBootScreen);
+  //   #ifdef WEBSITE_URL
+  //     tft_string.set(WEBSITE_URL);
+  //     tft.add_text(tft_string.center(TFT_WIDTH), SITE_URL_Y, COLOR_WEBSITE_URL, tft_string);
+  //   #endif
+
+  //   tft.queue.sync();
+
   }
 
   void MarlinUI::bootscreen_completion(const millis_t sofar) {
@@ -103,24 +160,24 @@ void MarlinUI::draw_kill_screen() {
   tft.set_background(COLOR_KILL_SCREEN_BG);
   tft_string.set(status_message);
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), 0, COLOR_KILL_SCREEN_TEXT, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH), tft_string.center(FONT_LINE_HEIGHT), COLOR_KILL_SCREEN_TEXT, tft_string);
 
   tft.canvas(0, 120, TFT_WIDTH, FONT_LINE_HEIGHT);
   tft.set_background(COLOR_KILL_SCREEN_BG);
   tft_string.set(GET_TEXT(MSG_HALTED));
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), 0, COLOR_KILL_SCREEN_TEXT, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH), tft_string.center(FONT_LINE_HEIGHT), COLOR_KILL_SCREEN_TEXT, tft_string);
 
   tft.canvas(0, 160, TFT_WIDTH, FONT_LINE_HEIGHT);
   tft.set_background(COLOR_KILL_SCREEN_BG);
   tft_string.set(GET_TEXT(MSG_PLEASE_RESET));
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), 0, COLOR_KILL_SCREEN_TEXT, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH), tft_string.center(FONT_LINE_HEIGHT), COLOR_KILL_SCREEN_TEXT, tft_string);
 
   tft.queue.sync();
 }
 
-void draw_heater_status(uint16_t x, uint16_t y, const int8_t Heater) {
+void draw_heater_status(uint16_t x, uint16_t y, const int8_t Heater,bool flag) {
   MarlinImage image = imgHotEnd;
   uint16_t Color;
   celsius_t currentTemperature, targetTemperature;
@@ -154,9 +211,9 @@ void draw_heater_status(uint16_t x, uint16_t y, const int8_t Heater) {
   else return;
 
   TERN_(TOUCH_SCREEN, if (targetTemperature >= 0) touch.add_control(HEATER, x, y, 64, 100, Heater));
-  tft.canvas(x, y, 64, 100);
+  tft.canvas(x, y, 92, 67);
   tft.set_background(COLOR_BACKGROUND);
-
+  if(flag) { tft.add_rectangle(0, 0, 92, 67, COLOR_AXIS_HOMED);}
   Color = currentTemperature < 0 ? COLOR_INACTIVE : COLOR_COLD;
 
   if (Heater >= 0) { // HotEnd
@@ -165,7 +222,8 @@ void draw_heater_status(uint16_t x, uint16_t y, const int8_t Heater) {
   #if HAS_HEATED_BED
     else if (Heater == H_BED) {
       if (currentTemperature >= 50) Color = COLOR_HEATED_BED;
-      image = targetTemperature > 0 ? imgBedHeated : imgBed;
+      //image = targetTemperature > 0 ? imgBedHeated : imgBed; 
+      image = imgBedHeated ; 
     }
   #endif
   #if HAS_TEMP_CHAMBER
@@ -182,19 +240,27 @@ void draw_heater_status(uint16_t x, uint16_t y, const int8_t Heater) {
     }
   #endif
 
-  tft.add_image(0, 18, image, Color);
-
-  tft_string.set(i16tostr3rj(currentTemperature));
-  tft_string.add(LCD_STR_DEGREE);
+  tft.add_image(31, 1, image, COLOR_WHITE);
+  char str_buf[16];
+  sprintf(str_buf,"%u/%u",(uint16_t)currentTemperature, (uint16_t)targetTemperature);
+  
+  tft_string.set(str_buf);
   tft_string.trim();
-  tft.add_text(tft_string.center(64) + 2, 69 + tft_string.vcenter(FONT_LINE_HEIGHT), Color, tft_string);
+  tft.add_text(tft_string.center(92) ,42, COLOR_WHITE, tft_string);
 
-  if (targetTemperature >= 0) {
-    tft_string.set(i16tostr3rj(targetTemperature));
-    tft_string.add(LCD_STR_DEGREE);
-    tft_string.trim();
-    tft.add_text(tft_string.center(64) + 2, 5 + tft_string.vcenter(FONT_LINE_HEIGHT), Color, tft_string);
-  }
+  // tft.add_image(0, 18, image, Color);
+
+  // tft_string.set(i16tostr3rj(currentTemperature));
+  // tft_string.add(LCD_STR_DEGREE);
+  // tft_string.trim();
+  // tft.add_text(tft_string.center(64) + 2, 69 + tft_string.vcenter(FONT_LINE_HEIGHT), Color, tft_string);
+
+  // if (targetTemperature >= 0) {
+  //   tft_string.set(i16tostr3rj(targetTemperature));
+  //   tft_string.add(LCD_STR_DEGREE);
+  //   tft_string.trim();
+  //   tft.add_text(tft_string.center(64) + 2, 5 + tft_string.vcenter(FONT_LINE_HEIGHT), Color, tft_string);
+  // }
 }
 
 void draw_fan_status(uint16_t x, uint16_t y, const bool blink) {
@@ -219,241 +285,466 @@ void draw_fan_status(uint16_t x, uint16_t y, const bool blink) {
   tft.add_text(tft_string.center(64) + 6, 69 + tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_FAN, tft_string);
 }
 
-void MarlinUI::draw_status_screen() {
-  const bool blink = get_blink();
+void draw_speed_status(uint16_t x, uint16_t y, const bool blink) {
 
-  TERN_(TOUCH_SCREEN, touch.clear());
-
-  // heaters and fan
-  uint16_t i, x, y = TFT_STATUS_TOP_Y;
-
-  for (i = 0 ; i < ITEMS_COUNT; i++) {
-    x = (TFT_WIDTH / ITEMS_COUNT - 64) / 2  + (TFT_WIDTH * i / ITEMS_COUNT);
-    switch (i) {
-      #ifdef ITEM_E0
-        case ITEM_E0: draw_heater_status(x, y, H_E0); break;
-      #endif
-      #ifdef ITEM_E1
-        case ITEM_E1: draw_heater_status(x, y, H_E1); break;
-      #endif
-      #ifdef ITEM_E2
-        case ITEM_E2: draw_heater_status(x, y, H_E2); break;
-      #endif
-      #ifdef ITEM_BED
-        case ITEM_BED: draw_heater_status(x, y, H_BED); break;
-      #endif
-      #ifdef ITEM_CHAMBER
-        case ITEM_CHAMBER: draw_heater_status(x, y, H_CHAMBER); break;
-      #endif
-      #ifdef ITEM_COOLER
-        case ITEM_COOLER: draw_heater_status(x, y, H_COOLER); break;
-      #endif
-      #ifdef ITEM_FAN
-        case ITEM_FAN: draw_fan_status(x, y, blink); break;
-      #endif
-    }
-  }
-
-  // coordinates
-  tft.canvas(4, 103,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      232, FONT_LINE_HEIGHT * 2
-    #else
-      312, FONT_LINE_HEIGHT
-    #endif
-  );
+  MarlinImage image = imgIncrease;
+  tft.canvas(x, y, 135, 100);
   tft.set_background(COLOR_BACKGROUND);
-  tft.add_rectangle(0, 0,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      232, FONT_LINE_HEIGHT * 2
-    #else
-      312, FONT_LINE_HEIGHT
-    #endif
-    , COLOR_AXIS_HOMED
-  );
-
-  if (TERN0(LCD_SHOW_E_TOTAL, printingIsActive())) {
-    #if ENABLED(LCD_SHOW_E_TOTAL)
-      tft.add_text( 10, tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "E");
-      const uint8_t escale = e_move_accumulator >= 100000.0f ? 10 : 1; // After 100m switch to cm
-      tft_string.set(ftostr4sign(e_move_accumulator / escale));
-      tft_string.add(escale == 10 ? 'c' : 'm');
-      tft_string.add('m');
-      tft.add_text(127 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED, tft_string);
-    #endif
-  }
-  else {
-    tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 32, 10), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "X");
-    const bool nhx = axis_should_home(X_AXIS);
-    tft_string.set(blink && nhx ? "?" : ftostr4sign(LOGICAL_X_POSITION(current_position.x)));
-    tft.add_text(
-      #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-        32 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
-      #else
-        68 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT),
-      #endif
-      nhx ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string
-    );
-
-    tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 110, 127), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "Y");
-    const bool nhy = axis_should_home(Y_AXIS);
-    tft_string.set(blink && nhy ? "?" : ftostr4sign(LOGICAL_Y_POSITION(current_position.y)));
-    tft.add_text(
-      #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-        110 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
-      #else
-        185 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT),
-      #endif
-      nhy ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string
-    );
-  }
-
-  tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 192, 219), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "Z");
-  const bool nhz = axis_should_home(Z_AXIS);
-  uint16_t offset = 25;
-  if (blink && nhz)
-    tft_string.set('?');
-  else {
-    const float z = LOGICAL_Z_POSITION(current_position.z);
-    tft_string.set(ftostr52sp((int16_t)z));
-    tft_string.rtrim();
-    offset += tft_string.width();
-
-    tft_string.set(ftostr52sp(z));
-    offset -= tft_string.width();
-  }
-  tft.add_text(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      192 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
-    #else
-      301 - tft_string.width() - offset, tft_string.vcenter(FONT_LINE_HEIGHT),
-    #endif
-  nhz ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string);
-  TERN_(TOUCH_SCREEN, touch.add_control(MOVE_AXIS, 0, 103,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      232, FONT_LINE_HEIGHT * 2
-    #else
-      312, FONT_LINE_HEIGHT
-    #endif
-  ));
-
-  // feed rate
-  tft.canvas(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      30, 172, 80
-    #else
-      70, 136, 84
-    #endif
-    , 32
-  );
-  tft.set_background(COLOR_BACKGROUND);
-  uint16_t color = feedrate_percentage == 100 ? COLOR_RATE_100 : COLOR_RATE_ALTERED;
-  tft.add_image(0, 0, imgFeedRate, color);
+  
+  tft.add_image(0, 18, image, COLOR_COLD);
+  
   tft_string.set(i16tostr3rj(feedrate_percentage));
   tft_string.add('%');
-  tft.add_text(32, tft_string.vcenter(30), color , tft_string);
-  TERN_(TOUCH_SCREEN, touch.add_control(FEEDRATE,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      30, 172, 80
-    #else
-      70, 136, 84
-    #endif
-    , 32
-  ));
+  tft.add_text(64,40 , COLOR_COLD, tft_string);
 
-  // flow rate
-  tft.canvas(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      140, 172, 80
-    #else
-      170, 136, 84
-    #endif
-    , 32
-  );
+}
+void draw_zoffset_status(uint16_t x, uint16_t y, const bool blink) {
+  MarlinImage image = imgDecrease;
+  tft.canvas(x, y, 135, 100);
   tft.set_background(COLOR_BACKGROUND);
-  color = planner.flow_percentage[0] == 100 ? COLOR_RATE_100 : COLOR_RATE_ALTERED;
-  tft.add_image(0, 0, imgFlowRate, color);
-  tft_string.set(i16tostr3rj(planner.flow_percentage[active_extruder]));
-  tft_string.add('%');
-  tft.add_text(32, tft_string.vcenter(30), color , tft_string);
-  TERN_(TOUCH_SCREEN, touch.add_control(FLOWRATE,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      140, 172, 80
-    #else
-      170, 136, 84
-    #endif
-    , 32, active_extruder
-  ));
-
-  // print duration
-  char buffer[14];
-  duration_t elapsed = print_job_timer.duration();
-  elapsed.toDigital(buffer);
-
-  tft.canvas(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      56, 256, 128
-    #else
-      96, 173, 128
-    #endif
-    , FONT_LINE_HEIGHT
-  );
-  tft.set_background(COLOR_BACKGROUND);
-  tft_string.set(buffer);
-  tft.add_text(tft_string.center(128), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_PRINT_TIME, tft_string);
-
-  // progress bar
-  const uint8_t progress = ui.get_progress_percent();
-  tft.canvas(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      4, 278, 232
-    #else
-      4, 198, 312
-    #endif
-    , 9
-  );
-  tft.set_background(COLOR_PROGRESS_BG);
-  tft.add_rectangle(0, 0,
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      232, 9
-    #else
-      312, 9
-    #endif
-    , COLOR_PROGRESS_FRAME
-  );
-  if (progress)
-    tft.add_bar(1, 1, ((TFT_WIDTH - 10) * progress) / 100, 7, COLOR_PROGRESS_BAR);
-
-  // status message
-  tft.canvas(
-    #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-      0, 296, 240
-    #else
-      0, 212, 320
-    #endif
-    , FONT_LINE_HEIGHT
-  );
-  tft.set_background(COLOR_BACKGROUND);
-  tft_string.set(status_message);
+  tft.add_image(0, 18, image, COLOR_COLD);
+  
+  char str_buf[10];
+  sprintf(str_buf,"%.2f",1.2);
+  
+  tft_string.set(str_buf);
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_STATUS_MESSAGE, tft_string);
+  tft.add_text(64,40 , COLOR_COLD, tft_string);
+}
 
-  #if ENABLED(TOUCH_SCREEN)
+void MarlinUI::previous_callbackFunc()
+{
+	  //Control
+  tft.canvas(0, 120, 50 , 120);
+
+  if(seclect == 1)
   {
-    add_control(
-      #if ENABLED(TFT_COLOR_UI_PORTRAIT)
-        176, 210
-      #else
-        256, 130
-      #endif
-	   , menu_main, imgSettings
-    );
-    #if ENABLED(SDSUPPORT)
-      const bool cm = card.isMounted(), pa = printingIsActive();
-      add_control(0, TERN(TFT_COLOR_UI_PORTRAIT, 210, 130), menu_media, imgSD, cm && !pa, COLOR_CONTROL_ENABLED, cm && pa ? COLOR_BUSY : COLOR_CONTROL_DISABLED);
-    #endif
-  } // (sublime)
-  #endif // TOUCH_SCREEN
+    tft.set_background(COLOR_BLUE);//COLOR_BLUE
+    //tft.add_rectangle(0, 0, 50, 120, COLOR_AXIS_HOMED);
+    tft.add_image(11, 45, imgSettings, COLOR_COLD);
+  }
+  else{
+    tft.set_background(COLOR_GREY);
+    tft.add_image(11, 45, imgSettings, COLOR_WHITE);
+  }
+  
+  
+  //Homing
+  tft.canvas(0, 0, 50 , 120);
+  if(seclect != 1 )
+  {
+    tft.set_background(COLOR_BLUE);
+    //tft.add_rectangle(0, 0, 50, 120, COLOR_AXIS_HOMED);
+    tft.add_image(10, 46, imgHome, COLOR_COLD);
+  }
+  else{
+    tft.set_background(COLOR_GREY);
+    tft.add_image(10, 46, imgHome, COLOR_WHITE);
+  }
+}
+
+
+void MarlinUI::draw_status_screen() {
+  const bool blink = get_blink();
+  TERN_(TOUCH_SCREEN, touch.clear());
+  //Control
+  tft.canvas(0, 120, 50 , 120);
+
+  if(seclect == 1)
+  {
+    tft.set_background(COLOR_BLUE);//COLOR_BLUE
+    //tft.add_rectangle(0, 0, 50, 120, COLOR_AXIS_HOMED);
+    tft.add_image(11, 45, imgSettings, COLOR_WHITE);
+  }
+  else{
+    tft.set_background(COLOR_GREY);
+    tft.add_image(11, 45, imgSettings, COLOR_WHITE);
+  }
+  
+  
+  //Homing
+  tft.canvas(0, 0, 50 , 120);
+  if(seclect != 1 )
+  {
+    tft.set_background(COLOR_BLUE);
+    //tft.add_rectangle(0, 0, 50, 120, COLOR_AXIS_HOMED);
+    tft.add_image(10, 46, imgHome, COLOR_WHITE);
+  }
+  else{
+    tft.set_background(COLOR_GREY);
+    tft.add_image(10, 46, imgHome, COLOR_WHITE);
+  }
+
+  if(ui.start_print_status){ //
+  
+    char * const longest = card.longest_filename();
+    char filenamebuffer[strlen(longest) + 2];
+    filenamebuffer[0] = ' ';
+    strcpy(filenamebuffer + 1, longest);
+    // status message
+    tft.canvas(74, 2, 222, FONT_LINE_HEIGHT);
+    tft.set_background(COLOR_BACKGROUND);
+    tft_string.set(filenamebuffer);
+    tft_string.trim();
+    tft.add_text(0, tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_WHITE, tft_string);
+    
+    // progress bar
+    #define PRORESS_LENGTH  222
+    const uint8_t progress = ui.get_progress_percent();
+    tft.canvas(74, 37, PRORESS_LENGTH, 6);
+    tft.set_background(COLOR_PROGRESS_BG);
+    tft.add_rectangle(0, 0, PRORESS_LENGTH, 6, COLOR_PROGRESS_FRAME);
+    if (progress)
+      tft.add_bar(1, 1, ((PRORESS_LENGTH-2) * progress) / 100, 4, COLOR_PROGRESS_BAR);
+	
+
+    // print duration
+    char buffer[14] ={0};
+    if((IS_SD_PRINTING() || did_pause_print)&& get_real_duration() ){
+      duration_t elapsed = print_job_timer.duration();
+      elapsed.toDigital(buffer);
+    }
+    else{
+      sprintf_P(buffer, PSTR("%02hu'%02hu"), 0, 0);     // 12'34
+    }
+	
+    tft.canvas(74, 51, 53 , FONT_LINE_HEIGHT);
+    tft.set_background(COLOR_BACKGROUND);
+    tft_string.set(buffer);
+    tft.add_text(tft_string.center(53), tft_string.vcenter(FONT_LINE_HEIGHT), 0xFDE6, tft_string);
+  //Pause Print
+    tft.canvas(216, 55, 34 , 34);
+    tft.set_background(COLOR_BACKGROUND);
+  if(seclect == 2)
+  {
+    tft.add_rectangle(0, 0, 34, 34, COLOR_AXIS_HOMED);
+  }
+
+  if(wait_for_user){ //pause and not print
+	  tft.add_image(1, 1, imgStartPrint,COLOR_GREEN );
+  }
+  else //staring
+  {
+  	  tft.add_image(1, 1, imgPause, COLOR_YELLOW);
+  }
+ 
+  
+  //Stop Pring
+  tft.canvas(216+40, 55, 34 , 34);
+  tft.set_background(COLOR_BACKGROUND);
+  if(seclect == 3)
+  {
+    tft.add_rectangle(0, 0, 34, 34, COLOR_AXIS_HOMED);
+  }
+    tft.add_image(1, 1, imgStop, COLOR_RED);
+  }
+  else
+  {
+     //Print
+    tft.canvas(75,12,90,60);
+    tft.set_background(COLOR_BACKGROUND);
+    if(seclect == 2)
+    {
+      tft.add_rectangle(0, 0, 90, 60, COLOR_AXIS_HOMED);
+	  tft.add_image(5, 5, imgHeatBackground, COLOR_GREY);
+	  tft.add_image(31, 13, imgSD, COLOR_WHITE);
+    }
+	else{
+     tft.add_image(5, 5, imgHeatBackground, COLOR_GREY);
+     tft.add_image(31, 13, imgSD, COLOR_WHITE);
+	}
+
+    //Preheat
+    tft.canvas(205,12,90,60);
+    tft.set_background(COLOR_BACKGROUND);
+    if(seclect == 3)
+    {
+      	tft.add_rectangle(0, 0, 90, 60, COLOR_AXIS_HOMED);
+	    tft.add_image(5, 5, imgHeatBackground, COLOR_GREY);
+	    tft.add_image(31,13, imgBed, COLOR_WHITE);
+    }
+	  else
+	  {
+		  tft.add_image(5, 5, imgHeatBackground, COLOR_GREY);
+		  tft.add_image(31,13, imgBed, COLOR_WHITE);
+	  }
+    
+  }
+ 
+  //heaters 
+  if(seclect == 4){
+    draw_heater_status(74, 93, H_E0,true);
+  }
+  else{
+    draw_heater_status(74, 93, H_E0,false);
+  }
+
+  if(seclect == 5){
+    draw_heater_status(204, 93, H_BED,true);
+  }
+  else{
+    draw_heater_status(204, 93, H_BED,false);
+  }
+  //speed
+  //draw_speed_status(50,160,0);
+  tft.canvas(74, 167, 92, 67);
+  tft.set_background(COLOR_BACKGROUND);
+  if(seclect == 6)
+  {
+    tft.add_rectangle(0, 0, 92, 67, COLOR_AXIS_HOMED);
+  }
+  tft.add_image(28, 7, imgFeedRate, COLOR_WHITE);
+  
+  tft_string.set(i16tostr3rj(feedrate_percentage));
+  tft_string.add('%');
+  tft.add_text(22,43 , COLOR_WHITE, tft_string);
+  
+  //z_offset
+  //draw_zoffset_status(185,160,0);
+  tft.canvas(204, 167, 92, 67);
+  tft.set_background(COLOR_BACKGROUND);
+  if(seclect == 7)
+  {
+    tft.add_rectangle(0, 0, 92, 67, COLOR_AXIS_HOMED);
+  }
+  tft.add_image(28, 7, imgLeveling, COLOR_WHITE);
+  
+  char str_buf[10];
+  sprintf(str_buf,"%.2f",1.2);
+  
+  tft_string.set(ftostr42_52(ui.getzoffset()));
+  tft_string.trim();
+  tft.add_text(22 , 43, COLOR_WHITE, tft_string);
+
+  // heaters and fan
+  // uint16_t i, x, y = TFT_STATUS_TOP_Y;
+
+  // for (i = 0 ; i < ITEMS_COUNT; i++) {
+  //   x = (TFT_WIDTH / ITEMS_COUNT - 64) / 2  + (TFT_WIDTH * i / ITEMS_COUNT);
+  //   switch (i) {
+  //     #ifdef ITEM_E0
+  //       case ITEM_E0: draw_heater_status(x, y, H_E0); break;
+  //     #endif
+  //     #ifdef ITEM_E1
+  //       case ITEM_E1: draw_heater_status(x, y, H_E1); break;
+  //     #endif
+  //     #ifdef ITEM_E2
+  //       case ITEM_E2: draw_heater_status(x, y, H_E2); break;
+  //     #endif
+  //     #ifdef ITEM_BED
+  //       case ITEM_BED: draw_heater_status(x, y, H_BED); break;
+  //     #endif
+  //     #ifdef ITEM_CHAMBER
+  //       case ITEM_CHAMBER: draw_heater_status(x, y, H_CHAMBER); break;
+  //     #endif
+  //     #ifdef ITEM_COOLER
+  //       case ITEM_COOLER: draw_heater_status(x, y, H_COOLER); break;
+  //     #endif
+  //     #ifdef ITEM_FAN
+  //       case ITEM_FAN: draw_fan_status(x, y, blink); break;
+  //     #endif
+  //   }
+  // }
+  // // coordinates
+  // tft.canvas(4, 103,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     232, FONT_LINE_HEIGHT * 2
+  //   #else
+  //     312, FONT_LINE_HEIGHT
+  //   #endif
+  // );
+  // tft.set_background(COLOR_BACKGROUND);
+  // tft.add_rectangle(0, 0,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     232, FONT_LINE_HEIGHT * 2
+  //   #else
+  //     312, FONT_LINE_HEIGHT
+  //   #endif
+  //   , COLOR_AXIS_HOMED
+  // );
+
+  // if (TERN0(LCD_SHOW_E_TOTAL, printingIsActive())) {
+  //   #if ENABLED(LCD_SHOW_E_TOTAL)
+  //     tft.add_text( 10, tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "E");
+  //     const uint8_t escale = e_move_accumulator >= 100000.0f ? 10 : 1; // After 100m switch to cm
+  //     tft_string.set(ftostr4sign(e_move_accumulator / escale));
+  //     tft_string.add(escale == 10 ? 'c' : 'm');
+  //     tft_string.add('m');
+  //     tft.add_text(127 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED, tft_string);
+  //   #endif
+  // }
+  // else {
+  //   tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 32, 10), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "X");
+  //   const bool nhx = axis_should_home(X_AXIS);
+  //   tft_string.set(blink && nhx ? "?" : ftostr4sign(LOGICAL_X_POSITION(current_position.x)));
+  //   tft.add_text(
+  //     #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //       32 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
+  //     #else
+  //       68 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT),
+  //     #endif
+  //     nhx ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string
+  //   );
+
+  //   tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 110, 127), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "Y");
+  //   const bool nhy = axis_should_home(Y_AXIS);
+  //   tft_string.set(blink && nhy ? "?" : ftostr4sign(LOGICAL_Y_POSITION(current_position.y)));
+  //   tft.add_text(
+  //     #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //       110 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
+  //     #else
+  //       185 - tft_string.width(), tft_string.vcenter(FONT_LINE_HEIGHT),
+  //     #endif
+  //     nhy ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string
+  //   );
+  // }
+
+  // tft.add_text(TERN(TFT_COLOR_UI_PORTRAIT, 192, 219), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_AXIS_HOMED , "Z");
+  // const bool nhz = axis_should_home(Z_AXIS);
+  // uint16_t offset = 25;
+  // if (blink && nhz)
+  //   tft_string.set('?');
+  // else {
+  //   const float z = LOGICAL_Z_POSITION(current_position.z);
+  //   tft_string.set(ftostr52sp((int16_t)z));
+  //   tft_string.rtrim();
+  //   offset += tft_string.width();
+
+  //   tft_string.set(ftostr52sp(z));
+  //   offset -= tft_string.width();
+  // }
+  // tft.add_text(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     192 - tft_string.width() / 2, FONT_LINE_HEIGHT + tft_string.vcenter(FONT_LINE_HEIGHT),
+  //   #else
+  //     301 - tft_string.width() - offset, tft_string.vcenter(FONT_LINE_HEIGHT),
+  //   #endif
+  // nhz ? COLOR_AXIS_NOT_HOMED : COLOR_AXIS_HOMED, tft_string);
+  // TERN_(TOUCH_SCREEN, touch.add_control(MOVE_AXIS, 0, 103,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     232, FONT_LINE_HEIGHT * 2
+  //   #else
+  //     312, FONT_LINE_HEIGHT
+  //   #endif
+  // ));
+
+  // // feed rate
+  // tft.canvas(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     30, 172, 80
+  //   #else
+  //     70, 136, 84
+  //   #endif
+  //   , 32
+  // );
+  // tft.set_background(COLOR_BACKGROUND);
+  // uint16_t color = feedrate_percentage == 100 ? COLOR_RATE_100 : COLOR_RATE_ALTERED;
+  // tft.add_image(0, 0, imgFeedRate, color);
+  // tft_string.set(i16tostr3rj(feedrate_percentage));
+  // tft_string.add('%');
+  // tft.add_text(32, tft_string.vcenter(30), color , tft_string);
+  // TERN_(TOUCH_SCREEN, touch.add_control(FEEDRATE,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     30, 172, 80
+  //   #else
+  //     70, 136, 84
+  //   #endif
+  //   , 32
+  // ));
+
+  // // flow rate
+  // tft.canvas(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     140, 172, 80
+  //   #else
+  //     170, 136, 84
+  //   #endif
+  //   , 32
+  // );
+  // tft.set_background(COLOR_BACKGROUND);
+  // color = planner.flow_percentage[0] == 100 ? COLOR_RATE_100 : COLOR_RATE_ALTERED;
+  // tft.add_image(0, 0, imgFlowRate, color);
+  // tft_string.set(i16tostr3rj(planner.flow_percentage[active_extruder]));
+  // tft_string.add('%');
+  // tft.add_text(32, tft_string.vcenter(30), color , tft_string);
+  // TERN_(TOUCH_SCREEN, touch.add_control(FLOWRATE,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     140, 172, 80
+  //   #else
+  //     170, 136, 84
+  //   #endif
+  //   , 32, active_extruder
+  // ));
+
+  // // print duration
+  // char buffer[14];
+  // duration_t elapsed = print_job_timer.duration();
+  // elapsed.toDigital(buffer);
+
+  // tft.canvas(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     56, 256, 128
+  //   #else
+  //     96, 173, 128
+  //   #endif
+  //   , FONT_LINE_HEIGHT
+  // );
+  // tft.set_background(COLOR_BACKGROUND);
+  // tft_string.set(buffer);
+  // tft.add_text(tft_string.center(128), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_PRINT_TIME, tft_string);
+
+  // // progress bar
+  // const uint8_t progress = ui.get_progress_percent();
+  // tft.canvas(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     4, 278, 232
+  //   #else
+  //     4, 198, 312
+  //   #endif
+  //   , 9
+  // );
+  // tft.set_background(COLOR_PROGRESS_BG);
+  // tft.add_rectangle(0, 0,
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     232, 9
+  //   #else
+  //     312, 9
+  //   #endif
+  //   , COLOR_PROGRESS_FRAME
+  // );
+  // if (progress)
+  //   tft.add_bar(1, 1, ((TFT_WIDTH - 10) * progress) / 100, 7, COLOR_PROGRESS_BAR);
+
+  // // status message
+  // tft.canvas(
+  //   #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //     0, 296, 240
+  //   #else
+  //     0, 212, 320
+  //   #endif
+  //   , FONT_LINE_HEIGHT
+  // );
+  // tft.set_background(COLOR_BACKGROUND);
+  // tft_string.set(status_message);
+  // tft_string.trim();
+  // tft.add_text(tft_string.center(TFT_WIDTH), tft_string.vcenter(FONT_LINE_HEIGHT), COLOR_STATUS_MESSAGE, tft_string);
+
+  // #if ENABLED(TOUCH_SCREEN)
+  // {
+  //   add_control(
+  //     #if ENABLED(TFT_COLOR_UI_PORTRAIT)
+  //       176, 210
+  //     #else
+  //       256, 130
+  //     #endif
+	//    , menu_main, imgSettings
+  //   );
+  //   #if ENABLED(SDSUPPORT)
+  //     const bool cm = card.isMounted(), pa = printingIsActive();
+  //     add_control(0, TERN(TFT_COLOR_UI_PORTRAIT, 210, 130), menu_media, imgSD, cm && !pa, COLOR_CONTROL_ENABLED, cm && pa ? COLOR_BUSY : COLOR_CONTROL_DISABLED);
+  //   #endif
+  // } // (sublime)
+  // #endif // TOUCH_SCREEN
 }
 
 // Low-level draw_edit_screen can be used to draw an edit screen from anyplace
@@ -466,14 +757,14 @@ void MenuEditItemBase::draw_edit_screen(FSTR_P const fstr, const char * const va
   menu_line(line++);
   tft_string.set(fstr, itemIndex, itemStringC, itemStringF);
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH-50), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
 
   TERN_(AUTO_BED_LEVELING_UBL, if (ui.external_control) line++);  // ftostr52() will overwrite *value so *value has to be displayed first
 
   menu_line(line);
   tft_string.set(value);
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_MENU_VALUE, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH-50), MENU_TEXT_Y_OFFSET, COLOR_MENU_VALUE, tft_string);
 
   #if ENABLED(AUTO_BED_LEVELING_UBL)
     if (ui.external_control) {
@@ -527,27 +818,67 @@ void TFT::draw_edit_screen_buttons() {
 // The Select Screen presents a prompt and two "buttons"
 void MenuItem_confirm::draw_select_screen(FSTR_P const yes, FSTR_P const no, const bool yesno, FSTR_P const pref, const char * const string/*=nullptr*/, FSTR_P const suff/*=nullptr*/) {
   uint16_t line = 1;
-
+  if(ui.confirm_windown_enabled != ui.last_confirm_windown_enabled){
+      ui.flexible_clear_lcd(0,0,50,240);
+  }
+    
   if (!string) line++;
 
   menu_line(line++);
   tft_string.set(pref);
   tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
+  if(!suff)
+	tft_string.add('?');
+  tft.add_text(tft_string.center(TFT_WIDTH-40), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
 
   if (string) {
     menu_line(line++);
     tft_string.set(string);
     tft_string.trim();
-    tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
+
+    tft.add_text(tft_string.center(TFT_WIDTH-40), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
   }
 
   if (suff) {
     menu_line(line);
     tft_string.set(suff);
     tft_string.trim();
-    tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
+    tft.add_text(tft_string.center(TFT_WIDTH-40), MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
   }
+ 
+  #define TIP_BUTTON_WIDTH 110
+  #define TIP_BUTTON_HIGHT 44
+  #define BUTTON_Y_POSTION 136
+  if(yesno){
+        tft.canvas(33, BUTTON_Y_POSTION, TIP_BUTTON_WIDTH, TIP_BUTTON_HIGHT);
+        tft.set_background(COLOR_BACKGROUND);
+  		  if(ui.currentScreen == tft_pause_print || ui.currentScreen == tft_stop_print || ui.currentScreen  == Reset_setting)
+			    tft.add_image(0, 0, imgCancel, COLOR_RED);
+		    else
+        	tft.add_image(0, 0, imgCancel, COLOR_BLUE);
+
+        tft.canvas(176, BUTTON_Y_POSTION, TIP_BUTTON_WIDTH, TIP_BUTTON_HIGHT);
+        tft.set_background(COLOR_BACKGROUND);
+        tft.add_image(0, 0, imgConfirm, COLOR_GREY);
+
+  }
+  else
+  {
+        tft.canvas(33, BUTTON_Y_POSTION, TIP_BUTTON_WIDTH, TIP_BUTTON_HIGHT);
+        tft.set_background(COLOR_BACKGROUND);
+        tft.add_image(0, 0, imgCancel, COLOR_GREY);
+
+        
+        tft.canvas(176, BUTTON_Y_POSTION, TIP_BUTTON_WIDTH, TIP_BUTTON_HIGHT);
+        tft.set_background(COLOR_BACKGROUND);
+  		  if(ui.currentScreen == tft_pause_print || ui.currentScreen == tft_stop_print || ui.currentScreen  == Reset_setting)
+			    tft.add_image(0, 0, imgConfirm, COLOR_RED);
+		    else 
+        	tft.add_image(0, 0, imgConfirm, COLOR_BLUE);
+
+  }
+ 
+
   #if ENABLED(TOUCH_SCREEN)
     if (no)  add_control(TERN(TFT_COLOR_UI_PORTRAIT, 32, 48), TFT_HEIGHT - 64, CANCEL,  imgCancel,  true, yesno ? HALF(COLOR_CONTROL_CANCEL) : COLOR_CONTROL_CANCEL);
     if (yes) add_control(TERN(TFT_COLOR_UI_PORTRAIT, 172, 208), TFT_HEIGHT - 64, CONFIRM, imgConfirm, true, yesno ? COLOR_CONTROL_CONFIRM : HALF(COLOR_CONTROL_CONFIRM));

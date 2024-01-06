@@ -24,8 +24,8 @@
 #include "../inc/MarlinConfig.h"
 
 #define PM_SAMPLE_RANGE HAL_ADC_RANGE
-#define PM_K_VALUE      6
-#define PM_K_SCALE      6
+#define PM_K_VALUE      0
+#define PM_K_SCALE      0
 
 template <const float & SCALE, int K_VALUE, int K_SCALE>
 struct pm_lpf_t {
@@ -76,6 +76,7 @@ public:
   #if ENABLED(POWER_MONITOR_VOLTAGE)
     FORCE_INLINE static float getVolts() { return volts.value + (POWER_MONITOR_VOLTAGE_OFFSET); }
     void add_voltage_sample(const uint16_t value) { volts.add_sample(value); }
+    FORCE_INLINE static float getVoltsADC() { return volts.filter_buf; }
   #else
     FORCE_INLINE static float getVolts() { return POWER_MONITOR_FIXED_VOLTAGE; }
   #endif

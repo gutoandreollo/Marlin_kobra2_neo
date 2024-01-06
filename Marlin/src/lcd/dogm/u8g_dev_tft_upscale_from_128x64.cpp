@@ -109,7 +109,7 @@ TFT_IO tftio;
 #define COLOR_AQUA        0x07FF  // #00FFFF
 
 #define COLOR_MAROON      0x7800  // #800000
-#define COLOR_GREEN       0x03E0  // #008000
+#define COLOR_GREEN       0x1E91  // #1ED690	//0x03E0 #008000
 #define COLOR_NAVY        0x000F  // #000080
 #define COLOR_OLIVE       0x8400  // #808000
 #define COLOR_PURPLE      0x8010  // #800080

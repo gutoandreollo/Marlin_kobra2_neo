@@ -31,6 +31,10 @@
 #include "temperature.h"
 #include "../lcd/marlinui.h"
 
+#if ENABLED(LEVEING_CALIBRATION_MODULE)
+  #include "../HAL/STM32/autoGetZoffset.h"
+#endif
+
 #define DEBUG_OUT BOTH(USE_SENSORLESS, DEBUG_LEVELING_FEATURE)
 #include "../core/debug_out.h"
 
@@ -108,7 +112,7 @@ Endstops::endstop_mask_t Endstops::live_state = 0;
  */
 
 void Endstops::init() {
-
+  //SET_INPUT(INV_Z_DIR_PIN);
   #if HAS_X_MIN
     #if ENABLED(ENDSTOPPULLUP_XMIN)
       SET_INPUT_PULLUP(X_MIN_PIN);
@@ -454,7 +458,13 @@ void Endstops::not_homing() {
   // If the last move failed to trigger an endstop, call kill
   void Endstops::validate_homing_move() {
     if (trigger_state()) hit_on_purpose();
-    else kill(GET_TEXT_F(MSG_KILL_HOMING_FAILED));
+    else if(HOMING_X == homing_state) 
+		  kill(GET_TEXT_F(MSG_KILL_HOMING_FAILED),FPSTR("X"));
+	  else if(HOMING_Y == homing_state) 
+		  kill(GET_TEXT_F(MSG_KILL_HOMING_FAILED),FPSTR("Y"));
+	  else if(HOMING_Z == homing_state) 
+		  kill(GET_TEXT_F(MSG_KILL_HOMING_FAILED),FPSTR("Z"));
+	
   }
 #endif
 
@@ -578,6 +588,9 @@ void __O2 Endstops::report_states() {
   TERN_(BLTOUCH, bltouch._set_SW_mode());
   SERIAL_ECHOLNPGM(STR_M119_REPORT);
   #define ES_REPORT(S) print_es_state(READ_ENDSTOP(S##_PIN) != S##_ENDSTOP_INVERTING, F(STR_##S))
+  
+  WRITE(Z_DIR_PIN,HIGH);
+  //SERIAL_ECHOLNPGM("Z_DIR:",READ(INV_Z_DIR_PIN));
   #if HAS_X_MIN
     ES_REPORT(X_MIN);
   #endif
@@ -1200,7 +1213,15 @@ void Endstops::update() {
         #if HAS_Z_MIN || (Z_SPI_SENSORLESS && Z_HOME_TO_MIN)
           if ( TERN1(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN, z_probe_enabled)
             && TERN1(USES_Z_MIN_PROBE_PIN, !z_probe_enabled)
-          ) PROCESS_ENDSTOP_Z(MIN);
+          ) {
+                #if ENABLED(LEVEING_CALIBRATION_MODULE)
+                  if(!autoProbe.enable_probe_swtich)
+                    PROCESS_ENDSTOP_Z(MIN);
+                #else
+                    PROCESS_ENDSTOP_Z(MIN);
+                #endif
+          }
+          
           #if   CORE_DIAG(XZ, X, MIN)
             PROCESS_CORE_ENDSTOP(X,MIN,Z,MIN);
           #elif CORE_DIAG(XZ, X, MAX)
@@ -1216,13 +1237,20 @@ void Endstops::update() {
         #if USES_Z_MIN_PROBE_PIN
           if (z_probe_enabled) PROCESS_ENDSTOP(Z, MIN_PROBE);
         #endif
+
+		#if ENABLED(LEVEING_CALIBRATION_MODULE)
+			#if !HAS_CUSTOM_PROBE_PIN || Z_MAX_PIN != Z_MIN_PROBE_PIN  // No probe or probe is Z_MIN || Probe is not Z_MAX
+				if(autoProbe.enable_calibration_module) PROCESS_ENDSTOP(Z, MAX);
+		  #endif
+    #endif
+
       }
       else { // Z +direction. Gantry up, bed down.
         #if HAS_Z_MAX || (Z_SPI_SENSORLESS && Z_HOME_TO_MAX)
           #if ENABLED(Z_MULTI_ENDSTOPS)
             PROCESS_ENDSTOP_Z(MAX);
           #elif TERN1(USES_Z_MIN_PROBE_PIN, Z_MAX_PIN != Z_MIN_PROBE_PIN)  // No probe or probe is Z_MIN || Probe is not Z_MAX
-            PROCESS_ENDSTOP(Z, MAX);
+            //PROCESS_ENDSTOP(Z, MAX);
           #endif
           #if   CORE_DIAG(XZ, X, MIN)
             PROCESS_CORE_ENDSTOP(X,MIN,Z,MAX);

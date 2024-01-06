@@ -191,13 +191,11 @@ bool load_filament(const_float_t slow_load_length/*=0*/, const_float_t fast_load
     if (show_lcd) ui.pause_show_message(PAUSE_MESSAGE_STATUS, mode);
     return false;
   }
-
   if (pause_for_user) {
     if (show_lcd) ui.pause_show_message(PAUSE_MESSAGE_INSERT, mode);
     SERIAL_ECHO_MSG(_PMSG(STR_FILAMENT_CHANGE_INSERT));
 
     first_impatient_beep(max_beep_count);
-
     KEEPALIVE_STATE(PAUSED_FOR_USER);
     wait_for_user = true;    // LCD click or M108 will clear this
 
@@ -233,10 +231,8 @@ bool load_filament(const_float_t slow_load_length/*=0*/, const_float_t fast_load
   #endif
 
   TERN_(BELTPRINTER, do_blocking_move_to_xy(0.00, 50.00));
-
   // Slow Load filament
   if (slow_load_length) unscaled_e_move(slow_load_length, FILAMENT_CHANGE_SLOW_LOAD_FEEDRATE);
-
   // Fast Load Filament
   if (fast_load_length) {
     #if FILAMENT_CHANGE_FAST_LOAD_ACCEL > 0
@@ -285,16 +281,18 @@ bool load_filament(const_float_t slow_load_length/*=0*/, const_float_t fast_load
           KEEPALIVE_STATE(PAUSED_FOR_USER);
           wait_for_user = false;
           #if EITHER(HAS_MARLINUI_MENU, DWIN_LCD_PROUI)
-            ui.pause_show_message(PAUSE_MESSAGE_OPTION); // Also sets PAUSE_RESPONSE_WAIT_FOR
+            //ui.pause_show_message(PAUSE_MESSAGE_OPTION); // Also sets PAUSE_RESPONSE_WAIT_FOR
           #else
             pause_menu_response = PAUSE_RESPONSE_WAIT_FOR;
           #endif
-          while (pause_menu_response == PAUSE_RESPONSE_WAIT_FOR) idle_no_sleep();
+          while(0);
+          //while (pause_menu_response == PAUSE_RESPONSE_WAIT_FOR) idle_no_sleep();
         }
       #endif
 
       // Keep looping if "Purge More" was selected
-    } while (TERN0(M600_PURGE_MORE_RESUMABLE, pause_menu_response == PAUSE_RESPONSE_EXTRUDE_MORE));
+    } while(0);
+    //while (TERN0(M600_PURGE_MORE_RESUMABLE, pause_menu_response == PAUSE_RESPONSE_EXTRUDE_MORE));
 
   #endif
   TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_end());
@@ -546,7 +544,7 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
       TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired(GET_TEXT_F(MSG_HEATER_TIMEOUT)));
 
       TERN_(HAS_RESUME_CONTINUE, wait_for_user_response(0, true)); // Wait for LCD click or M108
-
+  
       TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_do(PROMPT_INFO, GET_TEXT_F(MSG_REHEATING)));
 
       TERN_(EXTENSIBLE_UI, ExtUI::onStatusChanged(GET_TEXT_F(MSG_REHEATING)));
@@ -557,8 +555,8 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
       HOTEND_LOOP() thermalManager.reset_hotend_idle_timer(e);
 
       // Wait for the heaters to reach the target temperatures
-      ensure_safe_temperature(false);
-
+      //ensure_safe_temperature(false);
+ 
       // Show the prompt to continue
       show_continue_prompt(is_reload);
 
@@ -615,7 +613,6 @@ void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_
   //*/
 
   if (!did_pause_print) return;
-
   // Re-enable the heaters if they timed out
   bool nozzle_timed_out = false;
   HOTEND_LOOP() {
@@ -625,9 +622,8 @@ void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_
 
   if (targetTemp > thermalManager.degTargetHotend(active_extruder))
     thermalManager.setTargetHotend(targetTemp, active_extruder);
-
-  // Load the new filament
-  load_filament(slow_load_length, fast_load_length, purge_length, max_beep_count, true, nozzle_timed_out, PAUSE_MODE_SAME DXC_PASS);
+    // Load the new filament
+    load_filament(slow_load_length, fast_load_length, purge_length, max_beep_count, true, nozzle_timed_out, PAUSE_MODE_SAME DXC_PASS);
 
   if (targetTemp > 0) {
     thermalManager.setTargetHotend(targetTemp, active_extruder);
@@ -638,9 +634,8 @@ void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_
 
   // Check Temperature before moving hotend
   ensure_safe_temperature(DISABLED(BELTPRINTER));
-
   // Retract to prevent oozing
-  unscaled_e_move(-(PAUSE_PARK_RETRACT_LENGTH), feedRate_t(PAUSE_PARK_RETRACT_FEEDRATE));
+  //unscaled_e_move(-(PAUSE_PARK_RETRACT_LENGTH), feedRate_t(PAUSE_PARK_RETRACT_FEEDRATE));
 
   if (!axes_should_home()) {
     // Move XY back to saved position
@@ -711,7 +706,7 @@ void resume_print(const_float_t slow_load_length/*=0*/, const_float_t fast_load_
   TERN_(HAS_FILAMENT_SENSOR, runout.reset());
 
   ui.reset_status();
-  ui.return_to_status();
+  //ui.return_to_status();
 }
 
 #endif // ADVANCED_PAUSE_FEATURE

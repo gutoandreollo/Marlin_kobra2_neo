@@ -32,6 +32,11 @@
 
 #include "../../MarlinCore.h"
 
+#if HAS_MULTI_LANGUAGE
+  void menu_language();
+#endif
+
+
 #if HAS_FILAMENT_SENSOR
   #include "../../feature/runout.h"
 #endif
@@ -467,12 +472,21 @@ void menu_advanced_settings();
   }
 
 #endif // CUSTOM_MENU_CONFIG
+void Reset_setting()
+{
+	MenuItem_confirm::select_screen(
+		  GET_TEXT_F(MSG_RESTORE_DEFAULTS), GET_TEXT_F(MSG_BACK),
+		  ui.reset_settings,nullptr,
+		  GET_TEXT_F(MSG_RESTORE_DEFAULTS), (const char *)nullptr, nullptr
+		  );
+	  
 
+}
 void menu_configuration() {
   const bool busy = printer_busy();
 
   START_MENU();
-  BACK_ITEM(MSG_MAIN);
+  BACK_ITEM(MSG_BACK);
 
   //
   // Debug Menu when certain options are enabled
@@ -491,13 +505,12 @@ void menu_configuration() {
     }
   #endif
 
-  SUBMENU(MSG_ADVANCED_SETTINGS, menu_advanced_settings);
 
-  #if ENABLED(BABYSTEP_ZPROBE_OFFSET)
-    SUBMENU(MSG_ZPROBE_ZOFFSET, lcd_babystep_zoffset);
-  #elif HAS_BED_PROBE
-    EDIT_ITEM(LCD_Z_OFFSET_TYPE, MSG_ZPROBE_ZOFFSET, &probe.offset.z, Z_PROBE_OFFSET_RANGE_MIN, Z_PROBE_OFFSET_RANGE_MAX);
-  #endif
+//  #if ENABLED(BABYSTEP_ZPROBE_OFFSET)
+//    SUBMENU(MSG_ZPROBE_ZOFFSET, lcd_babystep_zoffset);
+//  #elif HAS_BED_PROBE
+//    EDIT_ITEM(LCD_Z_OFFSET_TYPE, MSG_ZPROBE_ZOFFSET, &probe.offset.z, Z_PROBE_OFFSET_RANGE_MIN, Z_PROBE_OFFSET_RANGE_MAX);
+//  #endif
 
   //
   // Set Fan Controller speed
@@ -559,33 +572,52 @@ void menu_configuration() {
   #endif
 
   #if HAS_FILAMENT_SENSOR
-    EDIT_ITEM(bool, MSG_RUNOUT_SENSOR, &runout.enabled, runout.reset);
+    //EDIT_ITEM(bool, MSG_RUNOUT_SENSOR, &runout.enabled, runout.reset);
   #endif
 
   #if HAS_FANCHECK
     EDIT_ITEM(bool, MSG_FANCHECK, &fan_check.enabled);
   #endif
 
-  #if ENABLED(POWER_LOSS_RECOVERY)
-    EDIT_ITEM(bool, MSG_OUTAGE_RECOVERY, &recovery.enabled, recovery.changed);
+  #if HAS_FAN
+	EDIT_ITEM(bool, MSG_FAN_SPEED,&ui.model_fan_enabled, ui.fan_callbackFunc);
   #endif
 
-  // Preheat configurations
-  #if HAS_PREHEAT && DISABLED(SLIM_LCD_MENUS)
-    LOOP_L_N(m, PREHEAT_COUNT)
-      SUBMENU_N_f(m, ui.get_preheat_label(m), MSG_PREHEAT_M_SETTINGS, _menu_configuration_preheat_settings);
-  #endif
+   #if HAS_MULTI_LANGUAGE
+  	SUBMENU(LANGUAGE_CHOOSE, menu_language);
+   #endif
+
+   SUBMENU(MSG_ABOUT, menu_about);
+
+//  #if ENABLED(POWER_LOSS_RECOVERY)
+//    EDIT_ITEM(bool, MSG_OUTAGE_RECOVERY, &recovery.enabled, recovery.changed);
+//  #endif
+
+  // // Preheat configurations
+  // #if HAS_PREHEAT && DISABLED(SLIM_LCD_MENUS)
+  //   LOOP_L_N(m, PREHEAT_COUNT)
+  //    SUBMENU_N_f(m, ui.get_preheat_label(m), MSG_PREHEAT_M_SETTINGS, _menu_configuration_preheat_settings);
+  // #endif
 
   #if ENABLED(SOUND_MENU_ITEM)
     EDIT_ITEM(bool, MSG_SOUND, &ui.sound_on, []{ ui.chirp(); });
   #endif
 
   #if ENABLED(EEPROM_SETTINGS)
-    ACTION_ITEM(MSG_STORE_EEPROM, ui.store_settings);
-    if (!busy) ACTION_ITEM(MSG_LOAD_EEPROM, ui.load_settings);
+    // ACTION_ITEM(MSG_STORE_EEPROM, ui.store_settings);
+    // if (!busy) ACTION_ITEM(MSG_LOAD_EEPROM, ui.load_settings);
   #endif
+  
+  //SUBMENU(MSG_ADVANCED_SETTINGS, menu_advanced_settings);
 
-  if (!busy) ACTION_ITEM(MSG_RESTORE_DEFAULTS, ui.reset_settings);
+   SUBMENU(MSG_RESTORE_DEFAULTS, Reset_setting);
+//  if (!busy) SUBMENU(MSG_RESTORE_DEFAULTS, []{
+//		MenuItem_confirm::select_screen(
+//		GET_TEXT_F(MSG_RESTORE_DEFAULTS), GET_TEXT_F(MSG_BACK),
+//		ui.reset_settings,nullptr,
+//		  GET_TEXT_F(MSG_RESTORE_DEFAULTS), (const char *)nullptr, nullptr
+//		);
+//	});
 
   END_MENU();
 }

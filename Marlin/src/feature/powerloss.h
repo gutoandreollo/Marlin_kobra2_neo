@@ -43,7 +43,7 @@
 #endif
 
 #ifndef POWER_LOSS_ZRAISE
-  #define POWER_LOSS_ZRAISE 2
+  #define POWER_LOSS_ZRAISE 0
 #endif
 
 //#define DEBUG_POWER_LOSS_RECOVERY
@@ -127,7 +127,7 @@ typedef struct {
       bool volumetric_enabled:1;  // M200 S D
     #endif
   } flag;
-
+  uint16_t feedrate_percentage;
   uint8_t valid_foot;
 
   bool valid() { return valid_head && valid_head == valid_foot; }
@@ -136,7 +136,7 @@ typedef struct {
 
 class PrintJobRecovery {
   public:
-    static const char filename[5];
+    static const char filename[10];
 
     static SdFile file;
     static job_recovery_info_t info;
@@ -189,16 +189,17 @@ class PrintJobRecovery {
     static void save(const bool force=ENABLED(SAVE_EACH_CMD_MODE), const float zraise=POWER_LOSS_ZRAISE, const bool raised=false);
 
     #if PIN_EXISTS(POWER_LOSS)
-      static void outage() {
-        static constexpr uint8_t OUTAGE_THRESHOLD = 3;
-        static uint8_t outage_counter = 0;
-        if (enabled && READ(POWER_LOSS_PIN) == POWER_LOSS_STATE) {
-          outage_counter++;
-          if (outage_counter >= OUTAGE_THRESHOLD) _outage();
-        }
-        else
-          outage_counter = 0;
-      }
+	static void outage();
+//      static void outage() {
+//        static constexpr uint8_t OUTAGE_THRESHOLD = 3;
+//        static uint8_t outage_counter = 0;
+//        if (enabled && READ(POWER_LOSS_PIN) == POWER_LOSS_STATE) {
+//          outage_counter++;
+//          if (outage_counter >= OUTAGE_THRESHOLD) _outage();
+//        }
+//        else
+//          outage_counter = 0;
+//      }
     #endif
 
     // The referenced file exists

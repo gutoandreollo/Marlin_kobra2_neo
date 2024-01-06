@@ -64,22 +64,34 @@ public:
   static void DataTransferEnd() { WRITE(TFT_CS_PIN, HIGH); __HAL_SPI_DISABLE(&SPIx); };
   static void DataTransferAbort();
 
-  static void WriteData(uint16_t Data) { Transmit(Data); }
+  static void WriteData(uint16_t Data) {Transmit(Data); }
   static void WriteReg(uint16_t Reg) { WRITE(TFT_A0_PIN, LOW); Transmit(Reg); WRITE(TFT_A0_PIN, HIGH); }
 
-  static void WriteSequence_DMA(uint16_t *Data, uint16_t Count) { TransmitDMA(DMA_MINC_ENABLE, Data, Count); }
-  static void WriteMultiple_DMA(uint16_t Color, uint16_t Count) { static uint16_t Data; Data = Color; TransmitDMA(DMA_MINC_DISABLE, &Data, Count); }
+  static void WriteSequence_DMA(uint16_t *Data, uint16_t Count) {WriteSequence(Data,Count);}//{ TransmitDMA(DMA_MINC_ENABLE, Data, Count); }
+  static void WriteMultiple_DMA(uint16_t Color, uint16_t Count) {WriteMultiple(Color,Count);}//{ static uint16_t Data; Data = Color; TransmitDMA(DMA_MINC_DISABLE, &Data, Count); }
 
   #if ENABLED(USE_SPI_DMA_TC)
     static void WriteSequenceIT(uint16_t *Data, uint16_t Count) { TransmitDMA_IT(DMA_MINC_ENABLE, Data, Count); }
     inline static void DMA_IRQHandler() { HAL_DMA_IRQHandler(&TFT_SPI::DMAtx); }
   #endif
 
-  static void WriteSequence(uint16_t *Data, uint16_t Count) { Transmit(DMA_MINC_ENABLE, Data, Count); }
+  static void WriteSequence(uint16_t *Data, uint32_t Count) { 
+    //Transmit(DMA_MINC_ENABLE, Data, Count); 
+    DataTransferBegin();
+    for(uint32_t i = 0;i<Count;i++)
+    {
+      WriteData(Data[i]);
+    }
+    }
   static void WriteMultiple(uint16_t Color, uint32_t Count) {
-    while (Count > 0) {
-      Transmit(DMA_MINC_DISABLE, &Color, Count > DMA_MAX_SIZE ? DMA_MAX_SIZE : Count);
-      Count = Count > DMA_MAX_SIZE ? Count - DMA_MAX_SIZE : 0;
+    // while (Count > 0) {
+    //   Transmit(DMA_MINC_DISABLE, &Color, Count > DMA_MAX_SIZE ? DMA_MAX_SIZE : Count);
+    //   Count = Count > DMA_MAX_SIZE ? Count - DMA_MAX_SIZE : 0;
+    // }
+    DataTransferBegin();
+    for(uint32_t i = 0;i<Count;i++)
+    {
+      WriteData(Color);
     }
   }
 };

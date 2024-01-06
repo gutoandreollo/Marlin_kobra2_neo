@@ -212,7 +212,7 @@ bool CardReader::is_visible_entity(const dir_t &p OPTARG(CUSTOM_FIRMWARE_UPLOAD,
     //|| !DIR_IS_FILE_OR_SUBDIR(&p)                       // Not a File or Directory
   ) return false;
 
-  flag.filenameIsDir = DIR_IS_SUBDIR(&p);               // We know it's a File or Folder
+  //flag.filenameIsDir = DIR_IS_SUBDIR(&p);               // We know it's a File or Folder
   setBinFlag(p.name[8] == 'B' &&                        // List .bin files (a firmware file for flashing)
              p.name[9] == 'I' &&
              p.name[10]== 'N');
@@ -485,6 +485,8 @@ void CardReader::manage_media() {
   uint8_t stat = uint8_t(IS_SD_INSERTED());
   if (stat == prev_stat) return;    // Already checked and still no change?
 
+ SERIAL_ECHOLNPGM("stat:",stat);
+  hal.watchdog_refresh();
   DEBUG_SECTION(cmm, "CardReader::manage_media()", true);
   DEBUG_ECHOLNPGM("Media present: ", prev_stat, " -> ", stat);
 
@@ -496,10 +498,12 @@ void CardReader::manage_media() {
   flag.workDirIsRoot = true;        // Return to root on mount/release/init
 
   const uint8_t old_stat = prev_stat;
+  safe_delay(500);                // Some boards need a delay to get settled
+  stat = uint8_t(IS_SD_INSERTED());
   prev_stat = stat;                 // Change now to prevent re-entry in safe_delay
 
   if (stat) {                       // Media Inserted
-    safe_delay(500);                // Some boards need a delay to get settled
+//    safe_delay(500);                // Some boards need a delay to get settled
 
     // Try to mount the media (only later with SD_IGNORE_AT_STARTUP)
     if (TERN1(SD_IGNORE_AT_STARTUP, old_stat != 2)) mount();
@@ -541,6 +545,8 @@ void CardReader::release() {
     abortFilePrintSoon();
   else
     endFilePrintNow();
+  
+  if(wait_for_heatup) wait_for_heatup = false;
 
   flag.mounted = false;
   flag.workDirIsRoot = true;
@@ -582,13 +588,16 @@ void CardReader::startOrResumeFilePrinting() {
 void CardReader::endFilePrintNow(TERN_(SD_RESORT, const bool re_sort/*=false*/)) {
   TERN_(ADVANCED_PAUSE_FEATURE, did_pause_print = 0);
   TERN_(DWIN_CREALITY_LCD, HMI_flag.print_finish = flag.sdprinting);
-  flag.abort_sd_printing = false;
-  if (isFileOpen()) file.close();
+   flag.abort_sd_printing = false;
+   wait_for_user = wait_for_heatup = false;//Wait for LCD click or M108 When removed TF_Card
+   did_pause_print = 0;//not run resume_print when removed TF_Card
+   file.close();
   TERN_(SD_RESORT, if (re_sort) presort());
 }
 
 void CardReader::abortFilePrintNow(TERN_(SD_RESORT, const bool re_sort/*=false*/)) {
   flag.sdprinting = flag.sdprintdone = false;
+
   endFilePrintNow(TERN_(SD_RESORT, re_sort));
 }
 
@@ -1326,7 +1335,8 @@ void CardReader::fileHasFinished() {
   void CardReader::openJobRecoveryFile(const bool read) {
     if (!isMounted()) return;
     if (recovery.file.isOpen()) return;
-    if (!recovery.file.open(&root, recovery.filename, read ? O_READ : O_CREAT | O_WRITE | O_TRUNC | O_SYNC))
+    //if (!recovery.file.open(&root, recovery.filename, read ? O_READ : O_CREAT | O_WRITE | O_TRUNC | O_SYNC))
+    if (!recovery.file.open(&root, recovery.filename, read ? O_READ : O_CREAT | O_WRITE | O_APPEND | O_SYNC))
       openFailed(recovery.filename);
     else if (!read)
       echo_write_to_file(recovery.filename);

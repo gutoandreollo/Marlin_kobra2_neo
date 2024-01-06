@@ -1,172 +1,91 @@
-#
-# Marlin 3D Printer Firmware
-# Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
-#
-# Based on Sprinter and grbl.
-# Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
+# User-specific uVision files
+*.opt
+*.uvopt
+*.uvoptx
+*.uvgui
+*.uvgui.*
+*.uvguix.*
+*.scvd
 
-# Generated files
-_Version.h
-bdf2u8g
-marlin_config.json
-mczip.h
-*.gen
-*.sublime-workspace
-
-#
-# OS
-#
-applet/
-.DS_Store
-
-#
-# Misc
-#
-*~
-*.orig
-*.rej
-*.bak
-*.idea
+# Listing files
+*.cod
+*.htm
 *.i
-*.ii
-*.swp
-tags
+*.lst
+*.map
+*.m51
+*.m66
+# define exception below if needed
+*.scr
 
-#
-# C++
-#
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-*.ino.cpp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-#
-# C
-#
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
+# Object and HEX files
+*.axf
+*.b[0-3][0-9]
 *.hex
+*.d
+*.crf
+*.elf
+*.hex
+*.h86
+*.lib
+*.obj
+*.o
+*.sbr
+*.bin
 
-# Debug files
-*.dSYM/
-*.su
+# Build files
+# define exception below if needed
+*.bat
+*._ia
+*.__i
+*._ii
 
-# PlatformIO files/dirs
-.pio*
-.pioenvs
-.piolibdeps
-.clang_complete
-.gcc-flags.json
-/lib/
+# Generated output files
+Listings
+Objects
+Output
+DebugConfig
+JLinkLog.txt
+project/*.bin
 
-# Secure Credentials
-Configuration_Secure.h
+# Debugger files
+# define exception below if needed
+*.ini
 
-# Visual Studio
-*.sln
-*.vcxproj
-*.vcxproj.user
-*.vcxproj.filters
-Release/
-Debug/
-__vm/
-.vs/
-vc-fileutils.settings
+# Backup files
+*.bak
+*.back
 
-# Visual Studio Code
-.vscode/*
-!.vscode/extensions.json
+# Other files
+*.build_log.htm
+*.cdb
+*.dep
+*.ic
+*.lin
+*.lnp
+*.orc
+# define exception below if needed
+*.pack
+# define exception below if needed
+*.pdsc
+*.plg
+# define exception below if needed
+*.sct
+*.sfd
+*.sfr
 
-#Simulation
-imgui.ini
-eeprom.dat
-spi_flash.bin
-fs.img
+# Miscellaneous
+*.tra
+*.fed
+*.l1p
+*.l2p
+*.iex
 
-#cmake
-CMakeLists.txt
-src/CMakeLists.txt
-CMakeListsPrivate.txt
-build/
+# To explicitly override the above, define any exceptions here; e.g.:
+# !my_customized_scatter_file.sct
 
-# CLion
-cmake-build-*
+# Source insight project files
+/SI/*
+*.si4project/
 
-# Eclipse
-.project
-.cproject
-.pydevproject
-.settings
-.classpath
-
-# Python
-__pycache__
-
-# IOLogger logs
-*_log.csv
+.pio

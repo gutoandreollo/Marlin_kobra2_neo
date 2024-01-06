@@ -28,6 +28,9 @@
 #include "../../module/planner.h"
 #include "../../module/stepper.h" // for various
 
+#if ENABLED(LEVEING_CALIBRATION_MODULE)
+  #include "../../HAL/STM32/autoGetZoffset.h"
+#endif
 #if HAS_MULTI_HOTEND
   #include "../../module/tool_change.h"
 #endif
@@ -143,9 +146,22 @@
       TERN_(DUAL_X_CARRIAGE, idex_set_parked(false));
 
       TERN_(SENSORLESS_HOMING, safe_delay(500)); // Short delay needed to settle
-
+      #if ENABLED(LEVEING_CALIBRATION_MODULE)
+	  	thermalManager.set_fan_speed(0, 0);
+        destination.x = autoProbe.calibration_positon.x - probe.offset_xy.x;
+		destination.y = Y_BED_SIZE - probe.offset_xy.y;
+      #endif
       do_blocking_move_to_xy(destination);
-      homeaxis(Z_AXIS);
+	  if(HOMING_FAILED_X !=homing_state && HOMING_FAILED_Y !=homing_state){
+			homing_state = HOMING_Z;
+			homeaxis(Z_AXIS);
+			if(HOMING_FAILED_Z == homing_state){
+					return;
+			}
+
+		}else{
+			return;}
+      
     }
     else {
       LCD_MESSAGE(MSG_ZPROBE_OUT);
@@ -205,9 +221,16 @@
 void GcodeSuite::G28() {
   DEBUG_SECTION(log_G28, "G28", DEBUGGING(LEVELING));
   if (DEBUGGING(LEVELING)) log_machine_info();
-
   TERN_(BD_SENSOR, bdl.config_state = 0);
 
+	#if ENABLED(LEVEING_CALIBRATION_MODULE)
+
+		if(ui.lcdLeveingstate == LEVEING_HEATING)
+		{
+			//autoProbe.write_sdcard_log("G28::preheat_for_probing");
+			probe.preheat_for_probing(LEVELING_NOZZLE_TEMP, LEVELING_BED_TEMP);
+		}
+	#endif
   /**
    * Set the laser power to false to stop the planner from processing the current power setting.
    */
@@ -243,6 +266,9 @@ void GcodeSuite::G28() {
 
   TERN_(HAS_DWIN_E3V2_BASIC, DWIN_HomingStart());
   TERN_(EXTENSIBLE_UI, ExtUI::onHomingStart());
+  #if HAS_MARLINUI_MENU
+  	LCD_MESSAGE(MSG_HOMING_START);
+  #endif  
 
   planner.synchronize();          // Wait for planner moves to finish!
 
@@ -449,8 +475,11 @@ void GcodeSuite::G28() {
         idex_set_parked();
 
       #else
-
+		homing_state = HOMING_X;
         homeaxis(X_AXIS);
+		if(HOMING_FAILED_X == homing_state){
+				return;
+		}
 
       #endif
     }
@@ -463,7 +492,16 @@ void GcodeSuite::G28() {
     #if HAS_Y_AXIS
       // Home Y (after X)
       if (DISABLED(HOME_Y_BEFORE_X) && doY)
-        homeaxis(Y_AXIS);
+	  	if(HOMING_FAILED_X !=homing_state){
+			homing_state = HOMING_Y;
+			homeaxis(Y_AXIS);
+			if(HOMING_FAILED_Y == homing_state){
+					return;
+			}
+
+		}else{
+			return;}
+        
     #endif
 
     #if BOTH(FOAMCUTTER_XYUV, HAS_J_AXIS)
@@ -599,10 +637,13 @@ void GcodeSuite::G28() {
     #endif
   #endif // HAS_HOMING_CURRENT
 
-  ui.refresh();
+  //ui.refresh();
 
   TERN_(HAS_DWIN_E3V2_BASIC, DWIN_HomingDone());
   TERN_(EXTENSIBLE_UI, ExtUI::onHomingDone());
+  #if HAS_MARLINUI_MENU
+  	LCD_MESSAGE(MSG_HOMING_DONE);
+  #endif	
 
   report_current_position();
 

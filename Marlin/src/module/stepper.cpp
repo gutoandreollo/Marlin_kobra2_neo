@@ -80,7 +80,8 @@
 #include "stepper.h"
 
 Stepper stepper; // Singleton
-
+bool z_dir_up_error_state = false;
+bool z_dir_down_error_state = false;
 #define BABYSTEPPING_EXTRA_DIR_WAIT
 
 #ifdef __AVR__
@@ -578,14 +579,23 @@ void Stepper::disable_all_steppers() {
 
   TERN_(EXTENSIBLE_UI, ExtUI::onSteppersDisabled());
 }
-
 #define SET_STEP_DIR(A)                       \
   if (motor_direction(_AXIS(A))) {            \
-    A##_APPLY_DIR(INVERT_##A##_DIR, false);   \
-    count_direction[_AXIS(A)] = -1;           \
+    if(_AXIS(A) == -1){\
+      GPIOC->BSRR = GPIO_PIN_6;\
+    }\
+    else{\
+        A##_APPLY_DIR(INVERT_##A##_DIR, false); \
+    } \ 
+    count_direction[_AXIS(A)] = -1;           \                                  
   }                                           \
   else {                                      \
-    A##_APPLY_DIR(!INVERT_##A##_DIR, false);  \
+   if(_AXIS(A) == -1){\
+      GPIOC->BRR = GPIO_PIN_6;\
+    }\
+    else{\
+        A##_APPLY_DIR(!INVERT_##A##_DIR, false); \
+    }  \ 
     count_direction[_AXIS(A)] = 1;            \
   }
 
@@ -596,10 +606,14 @@ void Stepper::disable_all_steppers() {
  *   COREXZ: X_AXIS=A_AXIS and Z_AXIS=C_AXIS
  *   COREYZ: Y_AXIS=B_AXIS and Z_AXIS=C_AXIS
  */
+bool set_dir_state = false;
+uint32_t internal_call = 0;
+uint32_t external_call = 0;
 void Stepper::set_directions() {
 
   DIR_WAIT_BEFORE();
-
+  //delay(1);
+  set_dir_state = true;
   TERN_(HAS_X_DIR, SET_STEP_DIR(X)); // A
   TERN_(HAS_Y_DIR, SET_STEP_DIR(Y)); // B
   TERN_(HAS_Z_DIR, SET_STEP_DIR(Z)); // C
@@ -631,7 +645,8 @@ void Stepper::set_directions() {
       count_direction.e = 1;
     }
   #endif
-
+  //delay(1);
+  set_dir_state = false;
   DIR_WAIT_AFTER();
 }
 
@@ -2697,7 +2712,7 @@ bool Stepper::is_block_busy(const block_t * const block) {
 }
 
 void Stepper::init() {
-
+  
   #if MB(ALLIGATOR)
     const float motor_current[] = MOTOR_CURRENT;
     unsigned int digipot_motor = 0;
@@ -2721,6 +2736,7 @@ void Stepper::init() {
   #endif
   #if HAS_Z_DIR
     Z_DIR_INIT();
+    internal_call = 1;
     #if NUM_Z_STEPPERS >= 2 && HAS_Z2_DIR
       Z2_DIR_INIT();
     #endif

@@ -36,7 +36,7 @@
 #include "../HAL/shared/Marduino.h"
 #include "../core/macros.h"
 
-#define MAX_UTF8_CHAR_SIZE 4
+#define MAX_UTF8_CHAR_SIZE 3
 
 // Use a longer character type (if needed) because wchar_t is only 16 bits wide
 #ifdef MAX_UTF8_CHAR_SIZE

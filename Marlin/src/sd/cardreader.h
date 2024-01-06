@@ -230,7 +230,7 @@ public:
   static uint32_t getIndex()     { return sdpos; }
   static bool isFileOpen()       { return isMounted() && file.isOpen(); }
   static bool eof()              { return getIndex() >= getFileSize(); }
-
+ 
   // File data operations
   static int16_t get()                            { int16_t out = (int16_t)file.read(); sdpos = file.curPosition(); return out; }
   static int16_t read(void *buf, uint16_t nbyte)  { return file.isOpen() ? file.read(buf, nbyte) : -1; }

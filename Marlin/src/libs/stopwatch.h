@@ -24,7 +24,7 @@
 #include "../inc/MarlinConfig.h"
 
 // Print debug messages with M111 S2 (Uses 156 bytes of PROGMEM)
-//#define DEBUG_STOPWATCH
+#define DEBUG_STOPWATCH
 
 /**
  * @brief Stopwatch class
@@ -103,7 +103,7 @@ class Stopwatch {
      * @return the delta since starting the stopwatch
      */
     static millis_t duration();
-
+	static void powerloss_resume();
     #ifdef DEBUG_STOPWATCH
 
       /**

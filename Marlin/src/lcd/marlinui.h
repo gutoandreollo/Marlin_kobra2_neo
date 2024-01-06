@@ -26,6 +26,9 @@
 #include "../module/motion.h"
 #include "../libs/buzzer.h"
 #include "buttons.h"
+#include "../module/temperature.h"
+#include "../module/probe.h"
+#include "../feature/runout.h"
 
 #if ENABLED(TOUCH_SCREEN_CALIBRATION)
   #include "tft_io/touch_calibration.h"
@@ -52,6 +55,15 @@
 #define START_OF_UTF8_CHAR(C) (((C) & 0xC0u) != 0x80U)
 
 typedef bool (*statusResetFunc_t)();
+
+enum LCDLeveingState:uint8_t {
+	 LEVEING_NONE,
+	 LEVEING_HEATING,
+	 LEVEING_PROBE,
+   LEVEING_WIPE_NOZZLE,
+	 LEVEING_DONE
+
+};
 
 #if HAS_WIRED_LCD
 
@@ -195,9 +207,28 @@ public:
   MarlinUI() {
     TERN_(HAS_MARLINUI_MENU, currentScreen = status_screen);
   }
-
+  static bool nozzle_heated_state,bed_heated_state;
+  static bool nozzle_beform_bed;
+  static bool preheat_state,have_heated_task;
+  static int16_t nozzle_target,bed_target;
+  static bool model_fan_enabled;
+  static bool confirm_windown_enabled;
+  static bool clear_all;
+  static bool last_confirm_windown_enabled;
+  static bool module_calibration_flag;
+  static LCDLeveingState lcdLeveingstate;
+  static float temp_probe_zoffset;
+  static bool real_duration_state;
+  static void fan_callbackFunc();
+  static void previous_callbackFunc();
+  static void pausu_befor_event();
+  static void StatusChange(const char * const msg);
+  static void back_callbackFunc();
   static void init();
-
+  static void real_duration(){ real_duration_state = true;}
+  static bool get_real_duration(){return real_duration_state;}
+  void reset_runout_state(){runout.filament_ran_out =false;}
+  
   #if HAS_DISPLAY || HAS_DWIN_E3V2
     static void init_lcd();
   #else
@@ -241,6 +272,7 @@ public:
 
   // LCD implementations
   static void clear_lcd();
+  static void flexible_clear_lcd(uint16_t x,uint16_t y,uint16_t width,uint16_t height);
 
   #if BOTH(HAS_MARLINUI_MENU, TOUCH_SCREEN_CALIBRATION)
     static void check_touch_calibration() {
@@ -436,6 +468,7 @@ public:
         static void draw_marlin_bootscreen(const bool line2=false);
         static void show_marlin_bootscreen();
         static void show_bootscreen();
+        static void color_change();
         static void bootscreen_completion(const millis_t sofar);
       #endif
 
@@ -576,6 +609,13 @@ public:
     static bool selection;
     static void set_selection(const bool sel) { selection = sel; }
     static bool update_selection();
+	  static uint8_t multi_selection;
+	  static bool fresh_flag;
+    static float zoffset;
+
+	static uint8_t update_multi_selection(uint8_t num);
+    static float getzoffset(){ return probe.offset.z;}
+    static void setzoffset(float value){ probe.offset.z = value;}
 
     static void synchronize(FSTR_P const msg=nullptr);
 
@@ -777,9 +817,10 @@ public:
   #if HAS_GRAPHICAL_TFT
     static void move_axis_screen();
   #endif
-
+  static uint16_t seclect;
+  static bool start_print_status;
+  static bool print_task_done;
 private:
-
   #if HAS_SCREEN_TIMEOUT
     static millis_t return_to_status_ms;
     static bool defer_return_to_status;

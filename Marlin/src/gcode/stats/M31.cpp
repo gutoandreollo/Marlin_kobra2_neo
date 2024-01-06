@@ -26,6 +26,8 @@
 #include "../../libs/duration_t.h"
 #include "../../lcd/marlinui.h"
 
+void printinf_finish();
+void menu_job_recovery();
 /**
  * M31: Get the time since the start of SD Print (or last M109)
  */
@@ -33,7 +35,8 @@ void GcodeSuite::M31() {
   char buffer[22];
   duration_t(print_job_timer.duration()).toString(buffer);
 
-  ui.set_status(buffer, ENABLED(DWIN_LCD_PROUI));
+  //ui.set_status(buffer, ENABLED(DWIN_LCD_PROUI));
 
   SERIAL_ECHO_MSG("Print time: ", buffer);
+  
 }

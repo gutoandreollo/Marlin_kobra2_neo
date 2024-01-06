@@ -405,6 +405,13 @@ PGMSTR(str_t_heating_failed, STR_T_HEATING_FAILED);
    */
   void Temperature::set_fan_speed(uint8_t fan, uint16_t speed) {
 
+//  if(speed == 0 ){
+//		  OUT_WRITE(PB5,0);
+//  }
+//  else{
+//		  OUT_WRITE(PB5,1);
+//  }
+
     NOMORE(speed, 255U);
 
     #if ENABLED(SINGLENOZZLE_STANDBY_FAN)
@@ -1425,8 +1432,8 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
         REPEAT(HOTENDS, _HOTENDPID)
       };
 
-      const float pid_output = is_idling ? 0 : hotend_pid[ee].get_pid_output(ee);
-
+      //const float pid_output = is_idling ? 0 : hotend_pid[ee].get_pid_output(ee);
+       const float pid_output = hotend_pid[ee].get_pid_output(ee);
       #if ENABLED(PID_DEBUG)
         if (ee == active_extruder)
           hotend_pid[ee].debug(temp_hotend[ee].celsius, pid_output, F("E"), ee);
@@ -1562,6 +1569,7 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
 
       temp_hotend[e].soft_pwm_amount = (temp_hotend[e].celsius > temp_range[e].mintemp || is_hotend_preheating(e)) && temp_hotend[e].celsius < temp_range[e].maxtemp ? (int)get_pid_output_hotend(e) >> 1 : 0;
 
+      //SERIAL_ECHOLNPGM("soft_pwm_amount:",temp_hotend[e].soft_pwm_amount);
       #if WATCH_HOTENDS
         // Make sure temperature is increasing
         if (watch_hotend[e].elapsed(ms)) {          // Enabled and time to check?
@@ -2481,7 +2489,6 @@ void Temperature::init() {
 
   TERN_(PROBING_HEATERS_OFF, paused_for_probing = false);
 
-
   // Init (and disable) SPI thermocouples
   #if TEMP_SENSOR_IS_ANY_MAX_TC(0) && PIN_EXISTS(TEMP_0_CS)
     OUT_WRITE(TEMP_0_CS_PIN, HIGH);
@@ -2577,6 +2584,8 @@ void Temperature::init() {
     HOTEND_LOOP() temp_hotend[e].modeled_block_temp = NAN;
   #endif
 
+  OUT_WRITE(POWER_CTRL_PIN,1);
+  
   #if HAS_HEATER_0
     #ifdef BOARD_OPENDRAIN_MOSFETS
       OUT_WRITE_OD(HEATER_0_PIN, HEATER_0_INVERTING);
@@ -2621,9 +2630,10 @@ void Temperature::init() {
   #if HAS_COOLER
     OUT_WRITE(COOLER_PIN, COOLER_INVERTING);
   #endif
-
+  
+  OUT_WRITE(PB5,0);
   #if HAS_FAN0
-    INIT_FAN_PIN(FAN_PIN);
+    //INIT_FAN_PIN(FAN_PIN);
   #endif
   #if HAS_FAN1
     INIT_FAN_PIN(FAN1_PIN);

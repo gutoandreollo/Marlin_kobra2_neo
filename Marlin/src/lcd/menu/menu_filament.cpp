@@ -336,15 +336,27 @@ void MarlinUI::pause_show_message(
   const PauseMode mode/*=PAUSE_MODE_SAME*/,
   const uint8_t extruder/*=active_extruder*/
 ) {
-  if (mode != PAUSE_MODE_SAME) pause_mode = mode;
-  hotend_status_extruder = extruder;
-  const screenFunc_t next_screen = ap_message_screen(message);
-  if (next_screen) {
-    ui.defer_status_screen();
-    ui.goto_screen(next_screen);
-  }
-  else
-    ui.return_to_status();
+// if (mode != PAUSE_MODE_SAME) pause_mode = mode;
+// hotend_status_extruder = extruder;
+// const screenFunc_t next_screen = ap_message_screen(message);
+//  if (next_screen) {
+//    ui.defer_status_screen();
+//    ui.goto_screen(next_screen);
+//  }
+//  else
+//    ui.return_to_status();
+//	ui.return_to_status();
+
 }
 
+void MarlinUI::pausu_befor_event(){
+	if(runout.filament_ran_out){
+      ui.goto_screen(runout_sensor);
+	}
+  else
+  {
+
+    ui.return_to_status();
+  }
+}
 #endif // HAS_MARLINUI_MENU && ADVANCED_PAUSE_FEATURE

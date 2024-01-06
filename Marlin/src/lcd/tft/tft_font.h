@@ -27,7 +27,7 @@
 
 #define JOIN(A,B,C)         CAT(CAT(A, B), C)
 #define MENU_FONT_NAME      JOIN(FONT_FAMILY, _, FONT_SIZE)
-#define SYMBOLS_FONT_NAME   JOIN(FONT_FAMILY, _Symbols_, FONT_SIZE)
+//#define SYMBOLS_FONT_NAME   JOIN(FONT_FAMILY, _Symbols_, FONT_SIZE)
 
 extern const uint8_t MENU_FONT_NAME[];
 extern const uint8_t SYMBOLS_FONT_NAME[];

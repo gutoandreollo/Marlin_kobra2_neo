@@ -25,6 +25,7 @@
  */
 
 #include "../../../inc/MarlinConfig.h"
+#include "../../../HAL/STM32/autoGetZoffset.h"
 
 #if HAS_ABL_NOT_UBL
 
@@ -226,6 +227,7 @@ public:
  *     There's no extra effect if you have a fixed Z probe.
  */
 G29_TYPE GcodeSuite::G29() {
+  probe.status = 0;
   DEBUG_SECTION(log_G29, "G29", DEBUGGING(LEVELING));
 
   // Leveling state is persistent when done manually with multiple G29 commands
@@ -451,6 +453,15 @@ G29_TYPE GcodeSuite::G29() {
         );
       #endif
     }
+
+		#if ENABLED(LEVEING_CALIBRATION_MODULE) 
+			if(autoProbe.ValibrationValueIsnan())
+			{	
+				
+				SERIAL_ECHOLN("run_calibration_probe FAILD");
+				return;	
+			}
+	  #endif
 
     // Position bed horizontally and Z probe vertically.
     #if    defined(SAFE_BED_LEVELING_START_X) || defined(SAFE_BED_LEVELING_START_Y) || defined(SAFE_BED_LEVELING_START_Z) \
@@ -930,7 +941,6 @@ G29_TYPE GcodeSuite::G29() {
       }
 
     #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
-
       // Auto Bed Leveling is complete! Enable if possible.
       if (!abl.dryrun || abl.reenable) set_bed_leveling_enabled(true);
 
@@ -945,8 +955,28 @@ G29_TYPE GcodeSuite::G29() {
 
   #ifdef Z_PROBE_END_SCRIPT
     if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Z Probe End Script: ", Z_PROBE_END_SCRIPT);
-    planner.synchronize();
-    process_subcommands_now(F(Z_PROBE_END_SCRIPT));
+	if(probe.status != -1){
+		planner.synchronize();
+    	autoProbe.calculation();
+    	process_subcommands_now(F("M500"));
+    	process_subcommands_now(F(Z_PROBE_END_SCRIPT));
+		thermalManager.setTargetHotend(0, 0);
+		thermalManager.setTargetBed(0);
+	}
+	else{
+		thermalManager.setTargetHotend(0, 0);
+		thermalManager.setTargetBed(0);
+		
+		thermalManager.set_fan_speed(0, 0);
+		thermalManager.set_fan_speed(1, 0);
+		process_subcommands_now(F("M84"));
+		wait_for_heatup = wait_for_user = false;
+		
+		planner.clear_block_buffer();
+		queue.clear();
+
+	}
+
   #endif
 
   TERN_(HAS_MULTI_HOTEND, if (abl.tool_index != 0) tool_change(abl.tool_index));

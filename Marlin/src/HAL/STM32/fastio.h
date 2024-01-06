@@ -21,12 +21,10 @@
  *
  */
 #pragma once
-
 /**
  * Fast I/O interfaces for STM32
  * These use GPIO register access for fast port manipulation.
  */
-
 // ------------------------
 // Public Variables
 // ------------------------
@@ -43,17 +41,28 @@ void FastIO_init(); // Must be called before using fast io macros
 // ------------------------
 // Defines
 // ------------------------
-
+extern bool set_dir_state;
+extern uint32_t internal_call;
+extern uint32_t external_call;
 #define _BV32(b) (1UL << (b))
 
 #ifndef PWM
   #define PWM OUTPUT
 #endif
-
 #if defined(STM32F0xx) || defined(STM32F1xx) || defined(STM32F3xx) || defined(STM32L0xx) || defined(STM32L4xx)
   #define _WRITE(IO, V) do { \
-    if (V) FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BSRR = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
-    else   FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BRR  = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
+    if(IO==-1){\
+      external_call++;\
+      if(set_dir_state){\
+        internal_call++;\
+        if (V) FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BSRR = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
+        else   FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BRR  = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
+      }\
+    }\
+    else{\
+      if (V) FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BSRR = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
+      else   FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BRR  = _BV32(STM_PIN(digitalPinToPinName(IO))) ; \
+    }\
   }while(0)
 #else
   #define _WRITE(IO, V) (FastIOPortMap[STM_PORT(digitalPinToPinName(IO))]->BSRR = _BV32(STM_PIN(digitalPinToPinName(IO)) + ((V) ? 0 : 16)))

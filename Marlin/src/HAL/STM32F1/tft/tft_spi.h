@@ -25,26 +25,26 @@
 
 #include <SPI.h>
 
-#define IS_SPI(N) (BOARD_NR_SPI >= N && (TFT_SCK_PIN == BOARD_SPI##N##_SCK_PIN) && (TFT_MOSI_PIN == BOARD_SPI##N##_MOSI_PIN) && (TFT_MISO_PIN == BOARD_SPI##N##_MISO_PIN))
-#if IS_SPI(1)
-  #define TFT_SPI_DEVICE  1
-  #define SPIdev          SPI1
-  #define DMAx            DMA1
-  #define DMA_CHx         DMA_CH3
-#elif IS_SPI(2)
-  #define TFT_SPI_DEVICE  2
-  #define SPIdev          SPI2
-  #define DMAx            DMA1
-  #define DMA_CHx         DMA_CH5
-#elif IS_SPI(3)
-  #define TFT_SPI_DEVICE  3
-  #define SPIdev          SPI3
-  #define DMAx            DMA2
-  #define DMA_CHx         DMA_CH2
-#else
-  #error "Invalid TFT SPI configuration."
-#endif
-#undef IS_SPI
+// #define IS_SPI(N) (BOARD_NR_SPI >= N && (TFT_SCK_PIN == BOARD_SPI##N##_SCK_PIN) && (TFT_MOSI_PIN == BOARD_SPI##N##_MOSI_PIN) && (TFT_MISO_PIN == BOARD_SPI##N##_MISO_PIN))
+// #if IS_SPI(1)
+//   #define TFT_SPI_DEVICE  1
+//   #define SPIdev          SPI1
+//   #define DMAx            DMA1
+//   #define DMA_CHx         DMA_CH3
+// #elif IS_SPI(2)
+//   #define TFT_SPI_DEVICE  2
+//   #define SPIdev          SPI2
+//   #define DMAx            DMA1
+//   #define DMA_CHx         DMA_CH5
+// #elif IS_SPI(3)
+//   #define TFT_SPI_DEVICE  3
+//   #define SPIdev          SPI3
+//   #define DMAx            DMA2
+//   #define DMA_CHx         DMA_CH2
+// #else
+//   #error "Invalid TFT SPI configuration."
+// #endif
+// #undef IS_SPI
 
 #ifndef LCD_READ_ID
   #define LCD_READ_ID 0x04   // Read display identification information (0xD3 on ILI9341)
@@ -77,20 +77,20 @@ public:
   static void Abort();
 
   static void DataTransferBegin(uint16_t DataWidth = DATA_SIZE_16BIT);
-  static void DataTransferEnd() { WRITE(TFT_CS_PIN, HIGH); SPIx.end(); };
+  static void DataTransferEnd() {}//{ WRITE(TFT_CS_PIN, HIGH); SPIx.end(); };
   static void DataTransferAbort();
 
-  static void WriteData(uint16_t Data) { Transmit(Data); }
-  static void WriteReg(uint16_t Reg) { WRITE(TFT_DC_PIN, LOW); Transmit(Reg); WRITE(TFT_DC_PIN, HIGH); }
+  static void WriteData(uint16_t Data){} //{ Transmit(Data); }
+  static void WriteReg(uint16_t Reg) {}//{ WRITE(TFT_DC_PIN, LOW); Transmit(Reg); WRITE(TFT_DC_PIN, HIGH); }
 
-  static void WriteSequence_DMA(uint16_t *Data, uint16_t Count) { TransmitDMA(DMA_MINC_ENABLE, Data, Count); }
-  static void WriteMultiple_DMA(uint16_t Color, uint16_t Count) { static uint16_t Data; Data = Color; TransmitDMA(DMA_MINC_DISABLE, &Data, Count); }
+  //static void WriteSequence_DMA(uint16_t *Data, uint16_t Count) {}//{ TransmitDMA(DMA_MINC_ENABLE, Data, Count); }
+  //static void WriteMultiple_DMA(uint16_t Color, uint16_t Count) {}//{ static uint16_t Data; Data = Color; TransmitDMA(DMA_MINC_DISABLE, &Data, Count); }
 
-  static void WriteSequence(uint16_t *Data, uint16_t Count) { Transmit(DMA_MINC_ENABLE, Data, Count); }
+  static void WriteSequence(uint16_t *Data, uint16_t Count) {}//{ Transmit(DMA_MINC_ENABLE, Data, Count); }
   static void WriteMultiple(uint16_t Color, uint32_t Count) {
-    while (Count > 0) {
-      Transmit(DMA_MINC_DISABLE, &Color, Count > DMA_MAX_SIZE ? DMA_MAX_SIZE : Count);
-      Count = Count > DMA_MAX_SIZE ? Count - DMA_MAX_SIZE : 0;
-    }
+    // while (Count > 0) {
+    //   Transmit(DMA_MINC_DISABLE, &Color, Count > DMA_MAX_SIZE ? DMA_MAX_SIZE : Count);
+    //   Count = Count > DMA_MAX_SIZE ? Count - DMA_MAX_SIZE : 0;
+    // }
   }
 };

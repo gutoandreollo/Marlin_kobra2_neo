@@ -25,13 +25,13 @@
 
 #include <stdint.h>
 
-extern const uint8_t marlin_logo_112x38x1[];
-extern const uint8_t marlin_logo_228x255x2[];
-extern const uint8_t marlin_logo_228x255x4[];
-extern const uint16_t marlin_logo_195x59x16[];
-extern const uint16_t marlin_logo_320x240x16[];
-extern const uint16_t marlin_logo_480x320x16[];
-extern const uint16_t background_320x30x16[];
+ extern const uint8_t marlin_logo_112x38x1[];
+ extern const uint8_t marlin_logo_228x255x2[];
+ extern const uint8_t marlin_logo_228x255x4[];
+ extern const uint16_t marlin_logo_195x59x16[];
+ extern const uint16_t marlin_logo_320x240x16[];
+// extern const uint16_t marlin_logo_480x320x16[];
+ extern const uint16_t background_320x30x16[];
 
 extern const uint8_t hotend_64x64x4[];
 extern const uint8_t bed_64x64x4[], bed_heated_64x64x4[];
@@ -49,7 +49,8 @@ extern const uint8_t confirm_64x64x4[];
 extern const uint8_t cancel_64x64x4[];
 extern const uint8_t increase_64x64x4[];
 extern const uint8_t decrease_64x64x4[];
-extern const uint8_t pause_64x64x4[];
+extern const uint8_t pause_32x32x4[];
+extern const uint8_t starting_32x32x4[];
 
 extern const uint8_t feedrate_32x32x4[];
 extern const uint8_t flowrate_32x32x4[];
@@ -63,7 +64,14 @@ extern const uint8_t refresh_32x32x4[];
 extern const uint8_t leveling_32x32x4[];
 
 extern const uint8_t slider_8x16x4[];
-
+extern const uint8_t zoffset_137x137x16[];
+extern const uint8_t zoffset_137x34x16[];
+extern const uint8_t stop_24x24x4[];
+extern const uint8_t left_round_36x36x4[];
+extern const uint8_t right_round_36x36x4[]; 
+extern const uint8_t ok_24x24x4[];
+extern const uint8_t btn_rounded_160x44x4[];
+extern const uint8_t hotend_bg_80x50x4[];
 enum MarlinImage : uint8_t {
   imgBootScreen = 0x00,
   imgHotEnd,
@@ -97,6 +105,16 @@ enum MarlinImage : uint8_t {
   imgHome,
   imgBtn52Rounded,
   imgBtn39Rounded,
+  imgZoffsetTip,
+  imgZoffsetTip1,
+  imgPause,
+  imgStop,
+  imgLeftRound,
+  imgRightRound,
+  imgOK,
+  imgStartPrint,
+  imgBtn44Round,
+  imgHeatBackground,
   imgCount,
   noImage = imgCount,
   imgPageUp = imgLeft,
@@ -130,12 +148,12 @@ typedef struct IMG_PACKED {
 extern const tImage NoLogo;
 
 #if ENABLED(SHOW_BOOTSCREEN)
-  extern const tImage MarlinLogo112x38x1;
-  extern const tImage MarlinLogo228x255x2;
-  extern const tImage MarlinLogo228x255x4;
-  extern const tImage MarlinLogo195x59x16;
-  extern const tImage MarlinLogo320x240x16;
-  extern const tImage MarlinLogo480x320x16;
+  // extern const tImage MarlinLogo112x38x1;
+  // extern const tImage MarlinLogo228x255x2;
+  // extern const tImage MarlinLogo228x255x4;
+  // extern const tImage MarlinLogo195x59x16;
+   extern const tImage MarlinLogo320x240x16;
+  //extern const tImage MarlinLogo480x320x16;
 #endif
 extern const tImage Background320x30x16;
 
@@ -160,8 +178,8 @@ extern const tImage Confirm_64x64x4;
 extern const tImage Cancel_64x64x4;
 extern const tImage Increase_64x64x4;
 extern const tImage Decrease_64x64x4;
-extern const tImage Pause_64x64x4;
-
+extern const tImage Pause_32x32x4;
+extern const tImage Starting_32x32x4;
 extern const tImage Feedrate_32x32x4;
 extern const tImage Flowrate_32x32x4;
 extern const tImage Directory_32x32x4;
@@ -174,5 +192,10 @@ extern const tImage Refresh_32x32x4;
 extern const tImage Leveling_32x32x4;
 
 extern const tImage Slider8x16x4;
+extern const tImage ZoffsetTip_137x137x16;
+extern const tImage ZoffsetTip_137x34x16; 
+extern const tImage Stop_64x64x4;
+extern const tImage RightRound_36x36x4;
+extern const tImage LeftRound_36x36x4;
 
 extern const tImage Images[imgCount];

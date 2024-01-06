@@ -19,6 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+#include "../../../lcd/tft/images/bsp_logo_data.h"
 
 #include "../../platforms.h"
 
@@ -33,6 +34,14 @@
 
 SPI_HandleTypeDef TFT_SPI::SPIx;
 DMA_HandleTypeDef TFT_SPI::DMAtx;
+void show_logo_secreen(){
+  uint8_t p;
+  for(uint32_t i= 0; i<768000;i++)
+  {
+
+    p = _ac[i];
+  }
+}
 
 void TFT_SPI::Init() {
   SPI_TypeDef *spiInstance;
@@ -71,7 +80,7 @@ void TFT_SPI::Init() {
   #ifdef SPI1_BASE
     if (SPIx.Instance == SPI1) {
       __HAL_RCC_SPI1_CLK_ENABLE();
-      #ifdef STM32F1xx
+      #ifdef STM32F1xx 
         __HAL_RCC_DMA1_CLK_ENABLE();
         DMAtx.Instance = DMA1_Channel3;
       #elif defined(STM32F4xx)
@@ -110,7 +119,7 @@ void TFT_SPI::Init() {
   #endif
 
   HAL_SPI_Init(&SPIx);
-
+  
   DMAtx.Init.Direction = DMA_MEMORY_TO_PERIPH;
   DMAtx.Init.PeriphInc = DMA_PINC_DISABLE;
   DMAtx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
@@ -120,12 +129,13 @@ void TFT_SPI::Init() {
   #ifdef STM32F4xx
     DMAtx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
   #endif
+  WRITE(TFT_CS_PIN, LOW);
 }
 
 void TFT_SPI::DataTransferBegin(uint16_t DataSize) {
-  SPIx.Init.DataSize = DataSize == DATASIZE_8BIT ?  SPI_DATASIZE_8BIT : SPI_DATASIZE_16BIT;
-  HAL_SPI_Init(&SPIx);
-  WRITE(TFT_CS_PIN, LOW);
+   SPIx.Init.DataSize = DataSize == DATASIZE_8BIT ?  SPI_DATASIZE_8BIT : SPI_DATASIZE_16BIT;
+   HAL_SPI_Init(&SPIx);
+   WRITE(TFT_CS_PIN, LOW);
 }
 
 #ifdef TFT_DEFAULT_DRIVER

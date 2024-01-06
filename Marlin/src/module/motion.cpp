@@ -789,8 +789,8 @@ void do_blocking_move_to_x(const_float_t rx, const_feedRate_t fr_mm_s/*=0.0*/) {
     );
   }
   void do_z_clearance(const_float_t zclear, const bool lower_allowed/*=false*/) {
-    float zdest = zclear;
-    if (!lower_allowed) NOLESS(zdest, current_position.z);
+    float zdest = zclear + current_position.z;
+    //if (!lower_allowed) NOLESS(zdest, current_position.z);
     do_blocking_move_to_z(_MIN(zdest, Z_MAX_POS), TERN(HAS_BED_PROBE, z_probe_fast_mm_s, homing_feedrate(Z_AXIS)));
   }
 #endif
@@ -804,10 +804,12 @@ static int16_t saved_feedrate_percentage;
 void remember_feedrate_and_scaling() {
   saved_feedrate_mm_s = feedrate_mm_s;
   saved_feedrate_percentage = feedrate_percentage;
+  // SERIAL_ECHOLNPGM("saved_feedrate_percentage:",saved_feedrate_percentage);
+  // SERIAL_ECHOLNPGM("feedrate_percentage:",feedrate_percentage);
 }
 void remember_feedrate_scaling_off() {
   remember_feedrate_and_scaling();
-  feedrate_percentage = 100;
+  //feedrate_percentage = 100;
 }
 void restore_feedrate_and_scaling() {
   feedrate_mm_s = saved_feedrate_mm_s;
@@ -1186,6 +1188,8 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
       // If the move is only in Z/E don't split up the move
       if (!diff.x && !diff.y) {
         planner.buffer_line(destination, fr_mm_s);
+//		    if(diff.z)
+//        	SERIAL_ECHOLNPGM("====z",destination.z,"====");
         return;
       }
 
@@ -2360,14 +2364,14 @@ void set_axis_is_at_home(const AxisEnum axis) {
   /**
    * Z Probe Z Homing? Account for the probe's Z offset.
    */
-  #if HAS_BED_PROBE && Z_HOME_TO_MIN
+  #if 1//HAS_BED_PROBE && Z_HOME_TO_MIN
     if (axis == Z_AXIS) {
-      #if HOMING_Z_WITH_PROBE
+      #if 1//HOMING_Z_WITH_PROBE
 
         current_position.z -= probe.offset.z;
 
         if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("*** Z HOMED WITH PROBE (Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN) ***\n> probe.offset.z = ", probe.offset.z);
-
+        //if (1) DEBUG_ECHOLNPGM("*** Z HOMED WITH PROBE (Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN) ***\n> probe.offset.z = ", probe.offset.z);
       #else
 
         if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("*** Z HOMED TO ENDSTOP ***");

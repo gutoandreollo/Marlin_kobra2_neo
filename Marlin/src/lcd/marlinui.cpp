@@ -23,6 +23,8 @@
 #include "../inc/MarlinConfig.h"
 
 #include "../MarlinCore.h" // for printingIsPaused
+#include "../HAL/STM32/autoGetZoffset.h"
+#include "../feature/runout.h"
 
 #if LED_POWEROFF_TIMEOUT > 0 || BOTH(HAS_WIRED_LCD, PRINTER_EVENT_LEDS)
   #include "../feature/leds/leds.h"
@@ -61,12 +63,39 @@ MarlinUI ui;
   #include "../module/printcounter.h"
 #endif
 
+uint16_t MarlinUI::seclect = 2;
+
+bool MarlinUI::start_print_status;
+bool MarlinUI::confirm_windown_enabled = 0;
+bool MarlinUI::last_confirm_windown_enabled = 0;
+bool MarlinUI::model_fan_enabled = 0;
+bool MarlinUI::clear_all = 0;
+bool MarlinUI::module_calibration_flag = false;
+float MarlinUI::temp_probe_zoffset;
+bool MarlinUI::print_task_done = false;
+bool MarlinUI::fresh_flag = false;
+bool MarlinUI::real_duration_state;
+
+void MarlinUI::fan_callbackFunc(){
+	if(model_fan_enabled)
+	{
+		thermalManager.set_fan_speed(0, 255);//open fan
+	}
+	else
+	{
+		thermalManager.set_fan_speed(0, 0);//open fan
+	}
+}
+void MarlinUI::back_callbackFunc(){
+	autoProbe.can_move_calibration = false;
+  manual_move.menu_scale = 1.0;
+  soft_endstop._enabled = true;
+}
 #if LCD_HAS_WAIT_FOR_MOVE
   bool MarlinUI::wait_for_move; // = false
 #endif
 
 constexpr uint8_t epps = ENCODER_PULSES_PER_STEP;
-
 #if HAS_STATUS_MESSAGE
   #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_LCD_PROUI)
     uint8_t MarlinUI::status_scroll_offset; // = 0
@@ -607,7 +636,9 @@ void MarlinUI::init() {
   #endif
 
   void MarlinUI::status_screen() {
-
+	
+  const bool busy = printingIsActive();
+  const bool Paused = printingIsPaused();
     TERN_(HAS_MARLINUI_MENU, ENCODER_RATE_MULTIPLY(false));
 
     #if BASIC_PROGRESS_BAR
@@ -665,13 +696,102 @@ void MarlinUI::init() {
     if (did_expire) reset_status();
 
     #if HAS_MARLINUI_MENU
-      if (use_click()) {
-        #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
-          next_filament_display = millis() + 5000UL;  // Show status message for 5s
-        #endif
-        goto_screen(menu_main);
-        reinit_lcd(); // Revive a noisy shared SPI LCD
-        return;
+	  if(ui.print_task_done)
+	  {	 	  
+		  return;
+	  }
+	  
+      if (use_click()) {	  	
+	  	switch(seclect){
+		  	case 1:
+          //status page
+			    return goto_screen(menu_main);
+          		//ui.refresh(); 
+			    break;
+		  	case 2:
+				  if(busy || Paused )
+				  {
+
+					  if(!Paused && IS_SD_PRINTING()){
+						return goto_screen(tft_pause_print);
+					  }
+
+					  else
+					  {
+						 if(READ(FIL_RUNOUT_PIN) != runout.get_state_original()){
+							  return goto_screen(runout_sensor);
+							
+						}
+						else{
+						  ui.clear_all = false;
+						  runout.filament_ran_out = false;
+						  wait_for_user = false;
+						}
+					  	
+					  }
+				  }
+				  else
+				  {
+	
+					    return goto_screen(menu_media);
+				  }
+
+			    break;
+		  	case 3:
+				  if((busy || Paused) && (IS_SD_PRINTING() || did_pause_print))
+				  {
+
+					  return goto_screen(tft_stop_print);
+
+				  }
+				  else if(!Paused && !busy)
+				  {
+
+				  	//thermalManager.temp_bed.target = 60;
+//            		  preheat_state = true;
+//					  nozzle_beform_bed = false;
+//					  have_heated_task = false;
+					  thermalManager.temp_hotend[0].target = 190;
+					  thermalManager.temp_bed.target = 60;
+            		  //bed_target = 60;
+				  }			
+					  
+			  //Preheat or pause button
+			    break;
+		  	case 4:
+				clear_all = true;
+				return goto_screen(tft_setTargetHotend);
+		
+			  //set nozzle temp
+			    break;
+		  	case 5:
+				clear_all = true;
+				return goto_screen(tft_setTargetBed);
+	
+			  //set bed temp
+			    break;
+		  	case 6:
+				clear_all = true;
+				return goto_screen(tft_set_speed);
+	
+			  //set print speed
+			    break;
+		  	case 7:	
+				temp_probe_zoffset = getzoffset();
+				fresh_flag = true;
+				clear_all = true;
+				return goto_screen(tft_babystep_zoffset);
+	 
+			  //set z_offset
+			    break;
+			  return;
+	  		}
+//        #if BOTH(FILAMENT_LCD_DISPLAY, SDSUPPORT)
+//          next_filament_display = millis() + 5000UL;  // Show status message for 5s
+//        #endif
+//        goto_screen(menu_main);
+//        reinit_lcd(); // Revive a noisy shared SPI LCD
+//        return;
       }
 
     #endif
@@ -711,7 +831,29 @@ void MarlinUI::init() {
       }
 
     #endif // ULTIPANEL_FEEDMULTIPLY
-
+    if(int16_t(encoderPosition)>= 1){
+      seclect++;
+      if(seclect>7) seclect = 7;
+        encoderPosition = 0;
+    }
+    else if(int16_t(encoderPosition)<= -1){
+  
+	  	if(!busy&&!Paused)// 
+	  	{
+			if(seclect ==1 ) 	
+				seclect = 1;
+			else
+				seclect--;
+	  	}
+		else
+		{
+			if(seclect == 2 ) 	
+				seclect = 2;
+			else
+				seclect--;
+		}
+      encoderPosition = 0;
+    }
     draw_status_screen();
   }
 
@@ -935,13 +1077,22 @@ void MarlinUI::init() {
 
     static uint16_t max_display_update_time = 0;
     millis_t ms = millis();
-
+  
+    
     #if LED_POWEROFF_TIMEOUT > 0
       leds.update_timeout(powerManager.psu_on);
     #endif
 
     #if HAS_MARLINUI_MENU
+      //heating_handle();
 
+      //nozzle_or_bed_heating_tark();
+
+	    check_endstops();
+	
+	    autoProbe.fan_control();
+	
+	    unload_load_filament();
       // Handle any queued Move Axis motion
       manual_move.task();
 
@@ -954,9 +1105,10 @@ void MarlinUI::init() {
 
       auto do_click = [&]{
         wait_for_unclick = true;                        //  - Set debounce flag to ignore continuous clicks
-        lcd_clicked = !wait_for_user;                   //  - Keep the click if not waiting for a user-click
-        wait_for_user = false;                          //  - Any click clears wait for user
-        quick_feedback();                               //  - Always make a click sound
+        lcd_clicked = true;                   //  - Keep the click if not waiting for a user-click
+        //lcd_clicked = !wait_for_user;                   //  - Keep the click if not waiting for a user-click
+        //wait_for_user = false;                          //  - Any click clears wait for user
+        //quick_feedback();                               //  - Always make a click sound
       };
 
       #if HAS_TOUCH_BUTTONS
@@ -999,7 +1151,11 @@ void MarlinUI::init() {
 
     if (ELAPSED(ms, next_lcd_update_ms) || TERN0(HAS_MARLINUI_U8GLIB, drawing_screen)) {
 
-      next_lcd_update_ms = ms + LCD_UPDATE_INTERVAL;
+      //next_lcd_update_ms = ms + LCD_UPDATE_INTERVAL;
+	    if (on_status_screen()|| currentScreen == menu_main ) 
+	  	  next_lcd_update_ms += (LCD_UPDATE_INTERVAL) * 2;
+	    else
+	      next_lcd_update_ms = ms + LCD_UPDATE_INTERVAL;
 
       #if HAS_TOUCH_BUTTONS
 
@@ -1209,6 +1365,7 @@ void MarlinUI::init() {
       if (!drawing_screen) switch (lcdDrawUpdate) {
         case LCDVIEW_CLEAR_CALL_REDRAW:
           clear_lcd(); break;
+          //flexible_clear_lcd(50,0,320-50,240);break;
         case LCDVIEW_REDRAW_NOW:
           refresh(LCDVIEW_NONE);
         case LCDVIEW_NONE:
@@ -1539,7 +1696,7 @@ void MarlinUI::init() {
   void MarlinUI::set_alert_status(FSTR_P const fstr) {
     set_status(fstr, 1);
     TERN_(HAS_TOUCH_SLEEP, wakeup_screen());
-    TERN_(HAS_MARLINUI_MENU, return_to_status());
+    //TERN_(HAS_MARLINUI_MENU, return_to_status());
   }
 
   #include <stdarg.h>
@@ -1554,7 +1711,7 @@ void MarlinUI::init() {
     va_start(args, FTOP(fmt));
     vsnprintf_P(status_message, MAX_MESSAGE_LENGTH, FTOP(fmt), args);
     va_end(args);
-
+  
     TERN_(HOST_STATUS_NOTIFICATIONS, hostui.notify(status_message));
 
     finish_status(level > 0);
@@ -1590,7 +1747,7 @@ void MarlinUI::init() {
     #if ENABLED(STATUS_MESSAGE_SCROLLING) && EITHER(HAS_WIRED_LCD, DWIN_LCD_PROUI)
       status_scroll_offset = 0;
     #endif
-
+	  ui.StatusChange(status_message);
     TERN_(EXTENSIBLE_UI, ExtUI::onStatusChanged(status_message));
     TERN_(DWIN_CREALITY_LCD, DWIN_StatusChanged(status_message));
     TERN_(DWIN_LCD_PROUI, DWIN_CheckStatusMessage());
@@ -1642,6 +1799,10 @@ void MarlinUI::init() {
     #if ENABLED(SDSUPPORT)
       wait_for_heatup = wait_for_user = false;
       card.abortFilePrintSoon();
+      did_pause_print = 0;
+  
+      runout.filament_ran_out = false;
+      ui.clear_all = ui.start_print_status = false;  
     #endif
     #ifdef ACTION_ON_CANCEL
       hostui.cancel();
@@ -1649,6 +1810,7 @@ void MarlinUI::init() {
     print_job_timer.stop();
     TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_open(PROMPT_INFO, F("UI Aborted"), FPSTR(DISMISS_STR)));
     LCD_MESSAGE(MSG_PRINT_ABORTED);
+
     TERN_(HAS_MARLINUI_MENU, return_to_status());
     TERN_(DWIN_LCD_PROUI, HMI_flag.abort_flag = true);
   }
@@ -1670,10 +1832,17 @@ void MarlinUI::init() {
 
   void MarlinUI::pause_print() {
     #if HAS_MARLINUI_MENU
-      synchronize(GET_TEXT_F(MSG_PAUSING));
-      defer_status_screen();
+	  ui.clear_all = true;
+ 	  if(print_job_timer.duration() >2){
+	  	if(!wait_for_heatup){
+        idle();
+        synchronize(GET_TEXT_F(MSG_PAUSING));
+	      idle();
+        defer_status_screen();
+	  	}
+ 	 }
     #endif
-
+	  wait_for_heatup = false; //Not wait heatup 
     TERN_(HAS_TOUCH_SLEEP, wakeup_screen());
     TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_open(PROMPT_PAUSE_RESUME, F("UI Pause"), F("Resume")));
 
@@ -1796,10 +1965,30 @@ void MarlinUI::init() {
       if (old_status < 2) {
         #if ENABLED(EXTENSIBLE_UI)
           ExtUI::onMediaRemoved();
-        #elif HAS_SD_DETECT
+        #elif HAS_SD_DETECT     
           LCD_MESSAGE(MSG_MEDIA_REMOVED);
           #if HAS_MARLINUI_MENU
-            if (!defer_return_to_status) return_to_status();
+          //return_to_status();
+          if(card.flag.abort_sd_printing || IS_SD_PAUSED() || print_job_timer.isPaused())
+          {
+
+            ui.seclect = 2;
+            print_job_timer.stop();//removed tf_card When Paused
+            card.flag.abort_sd_printing = true; //removed tf_card When Paused
+			      ui.clear_all = ui.start_print_status = false; 
+            goto_screen(sd_card_removed);
+          }
+		   else
+		   {
+		  	    if(currentScreen == menu_media)
+		  	    {
+              clear_lcd();
+				      ui.refresh();
+			      }
+		  		
+		  }
+            
+            //if (!defer_return_to_status) return_to_status();
           #endif
         #endif
       }
@@ -1824,8 +2013,12 @@ void MarlinUI::init() {
 
 #if HAS_MARLINUI_MENU
   void MarlinUI::reset_settings() {
+  	ui.set_language(0);
     settings.reset();
+	autoProbe.clean();
+	settings.save();
     completion_feedback();
+	  return_to_status();
     #if ENABLED(TOUCH_SCREEN_CALIBRATION)
       if (touch_calibration.need_calibration()) ui.goto_screen(touch_screen_calibration);
     #endif
@@ -1901,7 +2094,7 @@ void MarlinUI::init() {
         default:
         case 0: return GET_TEXT_F(MSG_ERR_EEPROM_CRC);
         case 1: return GET_TEXT_F(MSG_ERR_EEPROM_INDEX);
-        case 2: return GET_TEXT_F(MSG_ERR_EEPROM_VERSION);
+        //case 2: return GET_TEXT_F(MSG_ERR_EEPROM_VERSION);
       }
     }
 

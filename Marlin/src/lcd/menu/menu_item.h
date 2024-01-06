@@ -41,7 +41,7 @@ class MenuItem_submenu : public MenuItemBase {
     FORCE_INLINE static void draw(const bool sel, const uint8_t row, FSTR_P const fstr, ...) {
       _draw(sel, row, fstr, '>', LCD_STR_ARROW_RIGHT[0]);
     }
-    static void action(FSTR_P const, const screenFunc_t func) { ui.push_current_screen(); ui.goto_screen(func); }
+    static void action(FSTR_P const, const screenFunc_t func) {ui.push_current_screen(); ui.goto_screen(func); }
 };
 
 // Any menu item that invokes an immediate action
@@ -49,7 +49,7 @@ class MenuItem_button : public MenuItemBase {
   public:
     // Button-y Items are selectable lines with no other indicator
     static void draw(const bool sel, const uint8_t row, FSTR_P const fstr, ...) {
-      _draw(sel, row, fstr, '>', ' ');
+          _draw(sel, row, fstr, '>', ' ');
     }
 };
 

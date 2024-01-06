@@ -27,6 +27,12 @@
 
 #include "limits.h"
 
+#define DEVICE_NAME             "Anycubic Kobra 2 Neo"
+#define FIRMWARE_VER            "V1.5.6.3"
+#define BUILD_VOLUME            "220*220*250 (mm)"
+#define TECH_SUPPORT            "https://www.anycubic.com"
+
+extern bool calibration_state;
 extern int8_t encoderLine, encoderTopLine, screen_items;
 
 void scroll_screen(const uint8_t limit, const bool is_menu);
@@ -85,7 +91,10 @@ class MenuItem_back : public MenuItemBase {
       _draw(sel, row, fstr, LCD_STR_UPLEVEL[0], LCD_STR_UPLEVEL[0]);
     }
     // Back Item action goes back one step in history
-    FORCE_INLINE static void action(FSTR_P const=nullptr) { ui.go_back(); }
+    FORCE_INLINE static void action(FSTR_P const=nullptr) { 
+      ui.back_callbackFunc();
+      ui.go_back(); 
+      }
 };
 
 // CONFIRM_ITEM(LABEL,Y,N,FY,FN,...),
@@ -260,7 +269,43 @@ void _lcd_draw_homing();
 
 extern uint8_t screen_history_depth;
 inline void clear_menu_history() { screen_history_depth = 0; }
+void _menu_move_distance_e_maybe();
 
+typedef enum {
+	FILA_NO_ACT = 0x00,
+	FILA_IN 	= 0x01,
+	FILA_OUT	= 0x02,
+} _filament_cmd_t;
+
+extern bool filament_staring;
+extern uint8_t filament_cmd;
+extern bool unloaOrloaddfilamentstate;
+
+void tft_stop_print();
+void tft_pause_print();
+void tft_babystep_zoffset();
+void tft_set_speed();
+void tft_setTargetHotend();
+void tft_setTargetBed();
+void menu_about();
+void filament_change();
+void lcd_level_top_windown();
+void preheat_to_move_E();
+void draw_unload_load_filament();
+void runout_sensor();
+void unload_load_filament();
+void printinf_finish();
+void draw_edit_move_axis_screen(FSTR_P const fstr,int8_t axis, const char * const value/*=nullptr*/,uint16_t pos);
+void menu_configuration();
+void Reset_setting();
+void sd_card_removed();
+void menu_language();
+void calibration_tip();
+void menu_media_filelist();
+void menu_calibration();
+void check_endstops();
+void heating_handle();
+void nozzle_or_bed_heating_tark();
 #define STICKY_SCREEN(S) []{ ui.defer_status_screen(); ui.goto_screen(S); }
 
 #if HAS_LEVELING && ANY(LCD_BED_TRAMMING, PROBE_OFFSET_WIZARD, X_AXIS_TWIST_COMPENSATION)

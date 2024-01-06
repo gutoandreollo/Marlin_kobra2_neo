@@ -38,9 +38,9 @@
   #include "../lcd/extui/ui_api.h"
 #endif
 
-//#define FILAMENT_RUNOUT_SENSOR_DEBUG
+#define FILAMENT_RUNOUT_SENSOR_DEBUG
 #ifndef FILAMENT_RUNOUT_THRESHOLD
-  #define FILAMENT_RUNOUT_THRESHOLD 5
+  #define FILAMENT_RUNOUT_THRESHOLD 4000
 #endif
 
 void event_filament_runout(const uint8_t extruder);
@@ -85,6 +85,7 @@ class TFilamentMonitor : public FilamentMonitorBase {
   public:
     static void setup() {
       sensor.setup();
+      //SERIAL_ECHOLNPGM("get_state_original:",get_state_original);
       reset();
     }
 
@@ -152,11 +153,18 @@ class TFilamentMonitor : public FilamentMonitorBase {
         #endif
 
         if (ran_out) {
-          filament_ran_out = true;
-          event_filament_runout(extruder);
-          planner.synchronize();
+          if(!sensor.state_original){
+             filament_ran_out = true;
+             event_filament_runout(extruder);
+             planner.synchronize();
+          }
+          sensor.state_original = 0;
         }
       }
+    }
+
+    static  uint8_t get_state_original() {
+      return sensor.state_original;
     }
 };
 
@@ -173,11 +181,15 @@ class FilamentSensorBase {
     }
 
   public:
+    static uint8_t state_original;
     static void setup() {
       #define _INIT_RUNOUT_PIN(P,S,U,D) do{ if (ENABLED(U)) SET_INPUT_PULLUP(P); else if (ENABLED(D)) SET_INPUT_PULLDOWN(P); else SET_INPUT(P); }while(0)
       #define  INIT_RUNOUT_PIN(N) _INIT_RUNOUT_PIN(FIL_RUNOUT##N##_PIN, FIL_RUNOUT##N##_STATE, FIL_RUNOUT##N##_PULLUP, FIL_RUNOUT##N##_PULLDOWN)
       #if NUM_RUNOUT_SENSORS >= 1
         INIT_RUNOUT_PIN(1);
+        #if FIL_SENSOR_OPTIONAL
+          state_original = READ(FIL_RUNOUT1_PIN);//Read FIL_RUNOUT1_PIN state when Power up
+        #endif
       #endif
       #if NUM_RUNOUT_SENSORS >= 2
         INIT_RUNOUT_PIN(2);
@@ -216,6 +228,9 @@ class FilamentSensorBase {
       return poll_runout_pins() ^ uint8_t(0
         #if NUM_RUNOUT_SENSORS >= 1
           | (FIL_RUNOUT1_STATE ? 0 : _BV(1 - 1))
+          #if FIL_SENSOR_OPTIONAL
+             & ~(state_original ? 0 : _BV(1 - 1))
+          #endif
         #endif
         #if NUM_RUNOUT_SENSORS >= 2
           | (FIL_RUNOUT2_STATE ? 0 : _BV(2 - 1))
@@ -385,8 +400,8 @@ class FilamentSensorBase {
 
   class RunoutResponseDebounced {
     private:
-      static constexpr int8_t runout_threshold = FILAMENT_RUNOUT_THRESHOLD;
-      static int8_t runout_count[NUM_RUNOUT_SENSORS];
+      static constexpr int16_t runout_threshold = FILAMENT_RUNOUT_THRESHOLD;
+      static int16_t runout_count[NUM_RUNOUT_SENSORS];
 
     public:
       static void reset() {
@@ -394,12 +409,12 @@ class FilamentSensorBase {
       }
 
       static void run() {
-        LOOP_L_N(i, NUM_RUNOUT_SENSORS) if (runout_count[i] >= 0) runout_count[i]--;
+        LOOP_L_N(i, NUM_RUNOUT_SENSORS) if (runout_count[i] >= 0)  runout_count[i]--;
       }
 
       static uint8_t has_run_out() {
         uint8_t runout_flags = 0;
-        LOOP_L_N(i, NUM_RUNOUT_SENSORS) if (runout_count[i] < 0) SBI(runout_flags, i);
+        LOOP_L_N(i, NUM_RUNOUT_SENSORS) if (runout_count[i] < 0) SBI(runout_flags, i);  
         return runout_flags;
       }
 

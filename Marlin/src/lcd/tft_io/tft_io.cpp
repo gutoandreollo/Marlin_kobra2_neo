@@ -75,7 +75,7 @@ void TFT_IO::InitTFT() {
   #endif
 
   #if PIN_EXISTS(TFT_BACKLIGHT)
-    WRITE(TFT_BACKLIGHT_PIN, DISABLED(DELAYED_BACKLIGHT_INIT));
+    //WRITE(TFT_BACKLIGHT_PIN, DISABLED(DELAYED_BACKLIGHT_INIT));
     #if HAS_LCD_BRIGHTNESS && DISABLED(DELAYED_BACKLIGHT_INIT)
       ui._set_brightness();
     #endif
@@ -87,7 +87,6 @@ void TFT_IO::InitTFT() {
   #if TFT_DRIVER != AUTO
     lcd_id = TFT_DRIVER;
   #endif
-
   #if TFT_DRIVER == ST7735
     write_esc_sequence(st7735_init);
   #elif TFT_DRIVER == SSD1963

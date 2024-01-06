@@ -60,7 +60,6 @@ void set_bed_leveling_enabled(const bool enable/*=true*/) {
   DEBUG_SECTION(log_sble, "set_bed_leveling_enabled", DEBUGGING(LEVELING));
 
   const bool can_change = TERN1(AUTO_BED_LEVELING_BILINEAR, !enable || leveling_is_valid());
-
   if (can_change && enable != planner.leveling_active) {
 
     auto _report_leveling = []{

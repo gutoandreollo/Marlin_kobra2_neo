@@ -500,13 +500,13 @@ class Stepper {
     #if ENABLED(FREEZE_FEATURE)
       static bool frozen;                   // Set this flag to instantly freeze motion
     #endif
+    static axis_bits_t last_direction_bits, // The next stepping-bits to be output
+                       axis_did_move;       // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
 
   private:
 
     static block_t* current_block;          // A pointer to the block currently being traced
 
-    static axis_bits_t last_direction_bits, // The next stepping-bits to be output
-                       axis_did_move;       // Last Movement in the given direction is not null, as computed when the last movement was fetched from planner
 
     static bool abort_current_block;        // Signals to the stepper that current block should be aborted
 
@@ -601,10 +601,11 @@ class Stepper {
     // Positions of stepper motors, in step units
     static xyze_long_t count_position;
 
-    // Current stepper motor directions (+1 or -1)
-    static xyze_int8_t count_direction;
+
 
   public:
+  	    // Current stepper motor directions (+1 or -1)
+    static xyze_int8_t count_direction;
     // Initialize stepper hardware
     static void init();
 

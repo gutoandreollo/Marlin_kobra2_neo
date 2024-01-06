@@ -423,3 +423,14 @@ const char* ftostr52sp(const_float_t f) {
   }
   return &conv[1];
 }
+
+// Convert float to fixed-length string with +1.41 / -1.40 format
+const char* ftostr42sign(const_float_t f) {
+  int i = INTFLOAT(f, 2);
+  conv[3] = MINUSOR(i, '+');
+  conv[4] = DIGIMOD(i, 10);
+  conv[5] = '.';
+  conv[6] = DIGIMOD(i, 10);
+  conv[7] = DIGIMOD(i, 1);
+  return &conv[3];
+}

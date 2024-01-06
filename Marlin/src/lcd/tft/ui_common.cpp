@@ -59,9 +59,26 @@ static xy_uint_t cursor;
 #endif
 
 void menu_line(const uint8_t row, uint16_t color) {
-  cursor.set(0, row);
-  tft.canvas(0, TFT_TOP_LINE_Y + cursor.y * MENU_LINE_HEIGHT, TFT_WIDTH, MENU_ITEM_HEIGHT);
-  tft.set_background(color);
+  if(!ui.clear_all && ui.confirm_windown_enabled == false && (ui.seclect == 1 || ui.seclect == 2))
+  {
+    cursor.set(50, row);
+    tft.canvas(50, TFT_TOP_LINE_Y + cursor.y * (MENU_LINE_HEIGHT), TFT_WIDTH-50, MENU_ITEM_HEIGHT);
+    tft.set_background(color);
+  }
+  else 
+  {
+    if(!ui.clear_all){
+      cursor.set(20, row);
+      tft.canvas(20, TFT_TOP_LINE_Y + cursor.y * MENU_LINE_HEIGHT, TFT_WIDTH-40, MENU_ITEM_HEIGHT);
+    }
+    else{
+      cursor.set(0, row);
+      tft.canvas(0, TFT_TOP_LINE_Y + cursor.y * MENU_LINE_HEIGHT, TFT_WIDTH, MENU_ITEM_HEIGHT);
+    }
+
+    tft.set_background(color);
+  }
+
 }
 
 void menu_item(const uint8_t row, bool sel ) {
@@ -139,6 +156,18 @@ void MenuItemBase::_draw(const bool sel, const uint8_t row, FSTR_P const fstr, c
     case 0x02: image = imgDirectory; break;  // LCD_STR_FOLDER
   }
 
+  if(ui.currentScreen == menu_language)
+  {
+    if(ui.language == 1 && row == 2) //zh
+      tft.add_image(225, 4, imgOK, COLOR_GREEN);
+    else if(ui.language == 0 && row == 1)
+    {
+      tft.add_image(225, 4, imgOK, COLOR_GREEN);
+    }
+    //SERIAL_ECHOLNPGM("row:",row);
+
+  }
+
   uint8_t offset = MENU_TEXT_X_OFFSET;
   if (image != noImage) {
     string++;
@@ -159,7 +188,7 @@ void MenuEditItemBase::draw(const bool sel, const uint8_t row, FSTR_P const fstr
   tft.add_text(MENU_TEXT_X_OFFSET, MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, tft_string);
   if (inStr) {
     tft_string.set(inStr);
-    tft.add_text(TFT_WIDTH - MENU_TEXT_X_OFFSET - tft_string.width(), MENU_TEXT_Y_OFFSET, COLOR_MENU_VALUE, tft_string);
+    tft.add_text(TFT_WIDTH - MENU_TEXT_X_OFFSET - tft_string.width()-50, MENU_TEXT_Y_OFFSET, COLOR_MENU_VALUE, tft_string);
   }
 }
 
@@ -168,7 +197,7 @@ void MenuItem_static::draw(const uint8_t row, FSTR_P const fstr, const uint8_t s
   menu_item(row);
   tft_string.set(fstr, itemIndex, itemStringC, itemStringF);
   if (vstr) tft_string.add(vstr);
-  tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_YELLOW, tft_string);
+  tft.add_text(tft_string.center(TFT_WIDTH), MENU_TEXT_Y_OFFSET, COLOR_WHITE, tft_string);
 }
 
 #if ENABLED(SDSUPPORT)
@@ -177,7 +206,8 @@ void MenuItem_static::draw(const uint8_t row, FSTR_P const fstr, const uint8_t s
     menu_item(row, sel);
     if (isDir) tft.add_image(MENU_ITEM_ICON_X, MENU_ITEM_ICON_Y, imgDirectory, COLOR_MENU_TEXT, sel ? COLOR_SELECTION_BG : COLOR_BACKGROUND);
     uint8_t maxlen = (MENU_ITEM_HEIGHT) - (MENU_TEXT_Y_OFFSET) + 1;
-    tft.add_text(MENU_ITEM_ICON_SPACE, MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, ui.scrolled_filename(theCard, maxlen, row, sel));
+    //tft.add_text(MENU_ITEM_ICON_SPACE, MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, ui.scrolled_filename(theCard, maxlen, row, sel));
+    tft.add_text(10, MENU_TEXT_Y_OFFSET, COLOR_MENU_TEXT, ui.scrolled_filename(theCard, maxlen, row, sel));
   }
 
 #endif
@@ -201,6 +231,12 @@ void MarlinUI::init_lcd() {
   clear_lcd();
 }
 
+void MarlinUI::flexible_clear_lcd(uint16_t x,uint16_t y,uint16_t width,uint16_t height){
+
+  tft.fill(x, y, width, height, COLOR_BACKGROUND);
+  tft.queue.async();
+}
+
 void MarlinUI::clear_lcd() {
   #if ENABLED(TOUCH_SCREEN)
     touch.reset();
@@ -208,8 +244,25 @@ void MarlinUI::clear_lcd() {
   #endif
 
   tft.queue.reset();
-  tft.fill(0, 0, TFT_WIDTH, TFT_HEIGHT, COLOR_BACKGROUND);
-  cursor.set(0, 0);
+//  bool is_clear_all = (!clear_all && confirm_windown_enabled == false) \
+//    && (seclect == 1 || seclect == 2 || seclect == 3 )  && ui.lcdLeveingstate == LEVEING_NONE\
+//    && filament_cmd == FILA_NO_ACT;
+  bool is_clear_all = !clear_all && (confirm_windown_enabled == false);
+
+//  SERIAL_ECHOLNPGM("is_clear_all:",is_clear_all);
+//  SERIAL_ECHOLNPGM("!clear_all:",!clear_all);
+//  SERIAL_ECHOLNPGM("confirm_windown_enabled:",confirm_windown_enabled);
+//  SERIAL_ECHOLNPGM("filament_cmd:",filament_cmd);
+
+  if(is_clear_all){
+  	tft.fill(50, 0, TFT_WIDTH-50, TFT_HEIGHT, COLOR_BACKGROUND);
+  	cursor.set(50, 0);
+  }
+  else{
+    tft.fill(0, 0, TFT_WIDTH, TFT_HEIGHT, COLOR_BACKGROUND);
+    cursor.set(0, 0);
+  }
+
 }
 
 #if HAS_LCD_BRIGHTNESS

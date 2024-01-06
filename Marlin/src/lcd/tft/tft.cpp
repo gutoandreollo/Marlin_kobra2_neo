@@ -30,11 +30,26 @@
 #define DEBUG_OUT ENABLED(DEBUG_GRAPHICAL_TFT)
 #include "../../core/debug_out.h"
 
-uint16_t TFT::buffer[];
 
+uint16_t TFT::buffer[];
 void TFT::init() {
+  HAL_Delay(200);
   io.Init();
   io.InitTFT();
+
+
+  // set_window(0,0,320-1,240-1); // 
+  // //uint16_t i,j;
+
+  // WRITE(TFT_CS_PIN, LOW);//set_window关闭了片选
+  // WRITE(TFT_A0_PIN, HIGH);
+											   	 	
+
+  // io.WriteMultiple(0x1234,76800);
+ 
+ 
+	
+      
 }
 
 TFT tft;

@@ -30,6 +30,7 @@
 #include "usb_serial.h"
 
 #ifdef USBCON
+
   DefaultSerial1 MSerialUSB(false, SerialUSB);
 #endif
 
@@ -53,6 +54,8 @@
 // ------------------------
 
 uint16_t MarlinHAL::adc_result;
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 // ------------------------
 // Public functions
@@ -145,7 +148,7 @@ void MarlinHAL::clear_reset_source() { __HAL_RCC_CLEAR_RESET_FLAGS(); }
 // ------------------------
 
 #if ENABLED(USE_WATCHDOG)
-
+  #define WATCHDOG_DURATION_8S
   #define WDT_TIMEOUT_US TERN(WATCHDOG_DURATION_8S, 8000000, 4000000) // 4 or 8 second timeout
 
   #include <IWatchdog.h>

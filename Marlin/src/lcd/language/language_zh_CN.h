@@ -31,8 +31,37 @@ namespace Language_zh_CN {
   using namespace Language_en;  // Inherit undefined strings from English
 
   constexpr uint8_t CHARSIZE              = 3;
-  LSTR LANGUAGE                           = _UxGT("Simplified Chinese");
-
+  LSTR LANGUAGE_CHOOSE                    = _UxGT("语言");
+  LSTR LANGUAGE                            = _UxGT("中文");
+  LSTR LANGUAGE_2                         = _UxGT("英文");
+  LSTR MSG_HEATING_NOZZLE                 = _UxGT("喷嘴加热");
+  LSTR MSG_PLEASE_WAIT                    = _UxGT("请等待...");
+  LSTR MSG_MORE_CONFIG                    = _UxGT("更多设置");
+  LSTR MSG_ABOUT                          = _UxGT("关于");
+  LSTR MSG_MODULE_CALIBRATION             = _UxGT("模块校准");
+  LSTR MSG_POSITION_CALIBRATION           = _UxGT("位置校准");
+  LSTR MSG_MOVE_X_1MM                     = _UxGT("X轴移动1mm");
+  LSTR MSG_MOVE_X_01MM                    = _UxGT("X轴移动0.1mm");
+  LSTR MSG_MOVE_Y_1MM                     = _UxGT("Y轴移动1mm");
+  LSTR MSG_MOVE_Y_01MM                    = _UxGT("Y轴移动0.1mm");
+  LSTR MSG_LEVEING_PREHEATING             = _UxGT("预热中");
+  LSTR MSG_LEVEING_WIPE                   = _UxGT("清理中");
+  LSTR MSG_LEVEING_PROBE                  = _UxGT("调平中");
+  LSTR MSG_PRINT_FINISH                   = _UxGT("打印完成");
+  LSTR MSG_BUTTON_SAVE                    = _UxGT("保存");
+  LSTR MSG_FILAMENTLOADING                = _UxGT("进丝中...");     // "Load filament"
+  LSTR MSG_FILAMENTUNLOADING              = _UxGT("退丝中...");     // "Load filament"
+  LSTR MSG_FILAMENT_STOP                  = _UxGT("停止&返回 ");     // "Load filament"
+  LSTR MSG_TEMP_UINT                      = _UxGT("℃"); 
+  LSTR MSG_TF_CARD_REMOVED                = _UxGT("TF卡已拔出"); 
+  LSTR MSG_PROBE_FAILD                    = _UxGT("自动调平失败");
+  LSTR MSG_MODULE_PROBE_FAILD             = _UxGT("模块校准失败"); 
+  LSTR MSG_READ_CARD_ERROR                = _UxGT("TF Card 读卡异常");
+  LSTR MSG_POWER_OUTAGE                   = _UxGT("失电");
+  LSTR MSG_HOMING_START                   = _UxGT("HomingStart");
+  LSTR MSG_HOMING_DONE                    = _UxGT("HomingDone");
+  LSTR MSG_CALIBRATION_START              = _UxGT("CalibrationStart"); 
+  LSTR MSG_CALIBRATION_DONE               = _UxGT("CalibrationDone"); 
   LSTR WELCOME_MSG                        = MACHINE_NAME _UxGT("已就绪.");     // " ready."
   LSTR MSG_MARLIN                         = _UxGT("马林");
   LSTR MSG_YES                            = _UxGT("是");
@@ -52,14 +81,15 @@ namespace Language_zh_CN {
   LSTR MSG_ADVANCED_SETTINGS              = _UxGT("高级设置");
   LSTR MSG_CONFIGURATION                  = _UxGT("配置");
   LSTR MSG_RUN_AUTO_FILES                 = _UxGT("自动开始");     // "Autostart"
-  LSTR MSG_DISABLE_STEPPERS               = _UxGT("关闭步进电机");     // "Disable steppers"
+  LSTR MSG_DISABLE_STEPPERS               = _UxGT("关闭电机");     // "Disable steppers"
   LSTR MSG_DEBUG_MENU                     = _UxGT("调试菜单");     // "Debug Menu"
   LSTR MSG_PROGRESS_BAR_TEST              = _UxGT("进度条测试");     // "Progress Bar Test"
-  LSTR MSG_HOMING                         = _UxGT("回原点");
-  LSTR MSG_AUTO_HOME                      = _UxGT("自动回原点");     // "Auto home"
-  LSTR MSG_AUTO_HOME_X                    = _UxGT("回X原位");     // "Home X"
-  LSTR MSG_AUTO_HOME_Y                    = _UxGT("回Y原位");     // "Home Y"
-  LSTR MSG_AUTO_HOME_Z                    = _UxGT("回Z原位");     // "Home Z"
+  LSTR MSG_HOMING                         = _UxGT("归零...");
+  LSTR MSG_AUTO_HOME                      = _UxGT("XYZ归零");     // "Auto home"
+  LSTR MSG_AUTO_HOME_A                    = _UxGT("@轴归零");     // "Auto home"
+  LSTR MSG_AUTO_HOME_X                    = _UxGT("X轴归零");     // "Home X"
+  LSTR MSG_AUTO_HOME_Y                    = _UxGT("Y轴归零");     // "Home Y"
+  LSTR MSG_AUTO_HOME_Z                    = _UxGT("Z轴归零");     // "Home Z"
   LSTR MSG_AUTO_Z_ALIGN                   = _UxGT("自动Z对齐");
   LSTR MSG_LEVEL_BED_HOMING               = _UxGT("平台调平XYZ归原位");     // "Homing XYZ"
   LSTR MSG_LEVEL_BED_WAITING              = _UxGT("单击开始热床调平");     // "Click to Begin"
@@ -77,7 +107,7 @@ namespace Language_zh_CN {
     LSTR MSG_PREHEAT_1_BEDONLY            = _UxGT("预热 ") PREHEAT_1_LABEL _UxGT(" 热床");     //MSG_PREHEAT_1 " Bed"
     LSTR MSG_PREHEAT_1_SETTINGS           = _UxGT("预热 ") PREHEAT_1_LABEL _UxGT(" 设置");     //MSG_PREHEAT_1 " conf"
 
-    LSTR MSG_PREHEAT_M                    = _UxGT("预热 $");     // "Preheat PREHEAT_2_LABEL"
+    LSTR MSG_PREHEAT_M                    = _UxGT("预热");     // "Preheat PREHEAT_2_LABEL"
     LSTR MSG_PREHEAT_M_H                  = _UxGT("预热 $ ~");     // "Preheat PREHEAT_2_LABEL"
     LSTR MSG_PREHEAT_M_END                = _UxGT("预热 $ 喷嘴");     //MSG_PREHEAT_1 " "
     LSTR MSG_PREHEAT_M_END_E              = _UxGT("预热 $ 喷嘴 ~");     //MSG_PREHEAT_1 " "
@@ -99,7 +129,7 @@ namespace Language_zh_CN {
   LSTR MSG_RETRACT                        = _UxGT("回抽");     // "Retract"
   LSTR MSG_MOVE_AXIS                      = _UxGT("移动轴");     // "Move axis"
   LSTR MSG_BED_LEVELING                   = _UxGT("调平热床");     // "Bed leveling"
-  LSTR MSG_LEVEL_BED                      = _UxGT("调平热床");     // "Level bed"
+  LSTR MSG_LEVEL_BED                      = _UxGT("自动调平");     // "Level bed"
   LSTR MSG_BED_TRAMMING                   = _UxGT("调平边角");     // "Bed Tramming"
   LSTR MSG_NEXT_CORNER                    = _UxGT("下个边角");     // "Next corner"
   LSTR MSG_MESH_EDITOR                    = _UxGT("网格编辑器");
@@ -135,7 +165,7 @@ namespace Language_zh_CN {
   LSTR MSG_UBL_SET_TEMP_BED               = _UxGT("热床温度");     // "Bed Temp"
   LSTR MSG_UBL_BED_TEMP_CUSTOM            = _UxGT("热床温度");
   LSTR MSG_UBL_SET_TEMP_HOTEND            = _UxGT("热端温度");     // "Hotend Temp"
-  LSTR MSG_UBL_HOTEND_TEMP_CUSTOM         = _UxGT("热端温度");
+  LSTR MSG_UBL_HOTEND_TEMP_CUSTOM         = _UxGT("喷嘴温度");
   LSTR MSG_UBL_MESH_EDIT                  = _UxGT("网格编辑");     // "Mesh Edit"
   LSTR MSG_UBL_EDIT_CUSTOM_MESH           = _UxGT("编辑客户网格");     // "Edit Custom Mesh"
   LSTR MSG_UBL_FINE_TUNE_MESH             = _UxGT("细调网格");     // "Fine Tuning Mesh"
@@ -187,7 +217,7 @@ namespace Language_zh_CN {
   LSTR MSG_UBL_NO_STORAGE                 = _UxGT("没有存储");     // "No storage"
   LSTR MSG_UBL_SAVE_ERROR                 = _UxGT("错误: UBL保存");     // "Err: UBL Save"
   LSTR MSG_UBL_RESTORE_ERROR              = _UxGT("错误: UBL还原");     // "Err: UBL Restore"
-  LSTR MSG_UBL_Z_OFFSET                   = _UxGT("Z偏移量: ");
+  LSTR MSG_UBL_Z_OFFSET                   = _UxGT("Z轴补偿");
   LSTR MSG_UBL_Z_OFFSET_STOPPED           = _UxGT("Z偏移已停止");     // "Z-Offset Stopped"
   LSTR MSG_UBL_STEP_BY_STEP_MENU          = _UxGT("一步步UBL");     // "Step-By-Step UBL"
   LSTR MSG_UBL_1_BUILD_COLD_MESH          = _UxGT("1. 创设冷网格");
@@ -222,7 +252,7 @@ namespace Language_zh_CN {
   LSTR MSG_MOVE_X                         = _UxGT("移动X");     // "Move X"
   LSTR MSG_MOVE_Y                         = _UxGT("移动Y");     // "Move Y"
   LSTR MSG_MOVE_Z                         = _UxGT("移动Z");     // "Move Z"
-  LSTR MSG_MOVE_N                         = _UxGT("移动@");     // "Move @"
+  LSTR MSG_MOVE_N                         = _UxGT("移动@轴");     // "Move @"
   LSTR MSG_MOVE_E                         = _UxGT("挤出机");     // "Extruder"
   LSTR MSG_MOVE_EN                        = _UxGT("挤出机 *");     // "Extruder"
   LSTR MSG_HOTEND_TOO_COLD                = _UxGT("热端太冷");
@@ -231,7 +261,7 @@ namespace Language_zh_CN {
   LSTR MSG_MOVE_1MM                       = _UxGT("移动 1 mm");     // "Move 1mm"
   LSTR MSG_MOVE_10MM                      = _UxGT("移动 10 mm");     // "Move 10mm"
   LSTR MSG_MOVE_100MM                     = _UxGT("移动 100 mm");     // "Move 100mm"
-  LSTR MSG_SPEED                          = _UxGT("速率");     // "Speed"
+  LSTR MSG_SPEED                          = _UxGT("打印速度");     // "Speed"
   LSTR MSG_BED_Z                          = _UxGT("热床Z");     // "Bed Z"
   LSTR MSG_NOZZLE                         = _UxGT("喷嘴");     // "Nozzle" 噴嘴
   LSTR MSG_NOZZLE_N                       = _UxGT("喷嘴 ~");     // "Nozzle" 噴嘴
@@ -239,7 +269,7 @@ namespace Language_zh_CN {
   LSTR MSG_NOZZLE_STANDBY                 = _UxGT("喷嘴待命中");
   LSTR MSG_BED                            = _UxGT("热床");     // "Bed"
   LSTR MSG_CHAMBER                        = _UxGT("机箱壳");
-  LSTR MSG_FAN_SPEED                      = _UxGT("风扇速率");     // "Fan speed"
+  LSTR MSG_FAN_SPEED                      = _UxGT("风扇");     // "Fan speed"
   LSTR MSG_FAN_SPEED_N                    = _UxGT("风扇速率 ~");     // "Fan speed"
   LSTR MSG_STORED_FAN_N                   = _UxGT("存储的风扇 ~");
   LSTR MSG_EXTRA_FAN_SPEED                = _UxGT("额外风扇速率");     // "Extra fan speed"
@@ -256,8 +286,8 @@ namespace Language_zh_CN {
   LSTR MSG_MAX                            = " " LCD_STR_THERMOMETER _UxGT(" 最大");     // " " LCD_STR_THERMOMETER " Max"
   LSTR MSG_FACTOR                         = " " LCD_STR_THERMOMETER _UxGT(" 因数");     // " " LCD_STR_THERMOMETER " Fact"
   LSTR MSG_AUTOTEMP                       = _UxGT("自动控温");     // "Autotemp"
-  LSTR MSG_LCD_ON                         = _UxGT("开");     // "On"
-  LSTR MSG_LCD_OFF                        = _UxGT("关");     // "Off"
+  LSTR MSG_LCD_ON                         = _UxGT("On");     // "On"
+  LSTR MSG_LCD_OFF                        = _UxGT("Off");     // "Off"
   LSTR MSG_PID_AUTOTUNE                   = _UxGT("自动PID");
   LSTR MSG_PID_AUTOTUNE_E                 = _UxGT("自动PID *");
   LSTR MSG_PID_AUTOTUNE_DONE              = _UxGT("PID调整完成");
@@ -315,7 +345,7 @@ namespace Language_zh_CN {
   LSTR MSG_CONTRAST                       = _UxGT("LCD对比度");     // "LCD contrast"
   LSTR MSG_STORE_EEPROM                   = _UxGT("保存设置");     // "Store memory"
   LSTR MSG_LOAD_EEPROM                    = _UxGT("装载设置");     // "Load memory"
-  LSTR MSG_RESTORE_DEFAULTS               = _UxGT("恢复安全值");     // "Restore Defaults"
+  LSTR MSG_RESTORE_DEFAULTS               = _UxGT("恢复出厂设置");     // "Restore Defaults"
   LSTR MSG_INIT_EEPROM                    = _UxGT("初始化设置");     // "Initialize EEPROM"
   LSTR MSG_ERR_EEPROM_CRC                 = _UxGT("EEPROM CRC 错误");
   LSTR MSG_ERR_EEPROM_INDEX               = _UxGT("EEPROM Index 错误");
@@ -324,14 +354,14 @@ namespace Language_zh_CN {
   LSTR MSG_MEDIA_UPDATE                   = _UxGT("存储器更新");
   LSTR MSG_RESET_PRINTER                  = _UxGT("复位打印机");
   LSTR MSG_REFRESH                        = LCD_STR_REFRESH _UxGT("刷新");
-  LSTR MSG_INFO_SCREEN                    = _UxGT("信息屏");     // "Info screen"
+  LSTR MSG_INFO_SCREEN                    = _UxGT("主菜单");     // "Info screen"
   LSTR MSG_PREPARE                        = _UxGT("准备");     // "Prepare"
   LSTR MSG_TUNE                           = _UxGT("调整");     // "Tune"
   LSTR MSG_POWER_MONITOR                  = _UxGT("电源监控");
   LSTR MSG_CURRENT                        = _UxGT("电流");
   LSTR MSG_VOLTAGE                        = _UxGT("电压");
   LSTR MSG_POWER                          = _UxGT("功率");
-  LSTR MSG_START_PRINT                    = _UxGT("开始打印");
+  LSTR MSG_START_PRINT                    = _UxGT("打印");
   LSTR MSG_BUTTON_NEXT                    = _UxGT("下一个");
   LSTR MSG_BUTTON_INIT                    = _UxGT("初始");
   LSTR MSG_BUTTON_STOP                    = _UxGT("停止");
@@ -349,7 +379,7 @@ namespace Language_zh_CN {
   LSTR MSG_PRINTING_OBJECT                = _UxGT("打印物体");
   LSTR MSG_CANCEL_OBJECT                  = _UxGT("取消物体");
   LSTR MSG_CANCEL_OBJECT_N                = _UxGT("取消物体 =");
-  LSTR MSG_OUTAGE_RECOVERY                = _UxGT("中断恢复");
+  LSTR MSG_OUTAGE_RECOVERY                = _UxGT("恢复打印");
   LSTR MSG_MEDIA_MENU                     = _UxGT("从存储卡上打印");     // "Print from SD"
   LSTR MSG_NO_MEDIA                       = _UxGT("无存储卡");     // "No SD card"
   LSTR MSG_DWELL                          = _UxGT("休眠中 ...");     // "Sleep..."
@@ -387,11 +417,11 @@ namespace Language_zh_CN {
   LSTR MSG_TOOL_MIGRATION_AUTO            = _UxGT("自动迁移");
   LSTR MSG_TOOL_MIGRATION_END             = _UxGT("上一个挤出机");
   LSTR MSG_TOOL_MIGRATION_SWAP            = _UxGT("迁移至 *");
-  LSTR MSG_FILAMENTCHANGE                 = _UxGT("更换丝料");     // "Change filament"
+  LSTR MSG_FILAMENTCHANGE                 = _UxGT("换丝");     // "Change filament"
   LSTR MSG_FILAMENTCHANGE_E               = _UxGT("更换丝料 *");     // "Change filament"
-  LSTR MSG_FILAMENTLOAD                   = _UxGT("装载丝料");     // "Load filament"
+  LSTR MSG_FILAMENTLOAD                   = _UxGT("进丝");     // "Load filament"
   LSTR MSG_FILAMENTLOAD_E                 = _UxGT("装载丝料 *");     // "Load filament"
-  LSTR MSG_FILAMENTUNLOAD                 = _UxGT("卸载丝料");     // "Unload filament"
+  LSTR MSG_FILAMENTUNLOAD                 = _UxGT("退丝");     // "Unload filament"
   LSTR MSG_FILAMENTUNLOAD_E               = _UxGT("卸载丝料 *");     // "Unload filament"
   LSTR MSG_FILAMENTUNLOAD_ALL             = _UxGT("卸载全部");     // "Unload All"
   LSTR MSG_ATTACH_MEDIA                   = _UxGT("初始化存储卡");     // "Init. SD card"
@@ -434,8 +464,8 @@ namespace Language_zh_CN {
   LSTR MSG_THERMAL_RUNAWAY                = _UxGT("温控失控");     // "THERMAL RUNAWAY"
   LSTR MSG_THERMAL_RUNAWAY_BED            = _UxGT("热床热量失控");
   LSTR MSG_THERMAL_RUNAWAY_CHAMBER        = _UxGT("机箱热量失控");
-  LSTR MSG_ERR_MAXTEMP                    = _UxGT("错误：最高温度");     // "Err: MAXTEMP"
-  LSTR MSG_ERR_MINTEMP                    = _UxGT("错误：最低温度");     // "Err: MINTEMP"
+  LSTR MSG_ERR_MAXTEMP                    = _UxGT("最高温度");     // "Err: MAXTEMP"
+  LSTR MSG_ERR_MINTEMP                    = _UxGT("最低温度");     // "Err: MINTEMP"
   LSTR MSG_HALTED                         = _UxGT("打印停机");     // "PRINTER HALTED"
   LSTR MSG_PLEASE_RESET                   = _UxGT("请重置");     // "Please reset"
   LSTR MSG_SHORT_DAY                      = _UxGT("天");     // "d" // One character only
@@ -493,7 +523,7 @@ namespace Language_zh_CN {
     LSTR MSG_INFO_PRINT_FILAMENT          = _UxGT("已挤出");     // "Extruded"
   #endif
 
-  LSTR MSG_INFO_MIN_TEMP                  = _UxGT("最低温度");     // "Min Temp"
+  LSTR MSG_INFO_MIN_TEMP                  = _UxGT("最低温度1");     // "Min Temp"
   LSTR MSG_INFO_MAX_TEMP                  = _UxGT("最高温度");     // "Max Temp"
   LSTR MSG_INFO_PSU                       = _UxGT("电源供应");     // "Power Supply"
   LSTR MSG_DRIVE_STRENGTH                 = _UxGT("驱动力度");     // "Drive Strength"
@@ -508,10 +538,10 @@ namespace Language_zh_CN {
   LSTR MSG_FILAMENT_CHANGE_OPTION_PURGE   = _UxGT("清除更多");     // "Purge more"
   LSTR MSG_FILAMENT_CHANGE_OPTION_RESUME  = _UxGT("恢复打印");     // "Resume print"
   LSTR MSG_FILAMENT_CHANGE_NOZZLE         = _UxGT("  喷嘴: ");     // "  Nozzle: "
-  LSTR MSG_RUNOUT_SENSOR                  = _UxGT("断料传感器");
+  LSTR MSG_RUNOUT_SENSOR                  = _UxGT("耗材异常");
   LSTR MSG_RUNOUT_DISTANCE_MM             = _UxGT("断料距离mm");
-  LSTR MSG_KILL_HOMING_FAILED             = _UxGT("归原位失败");     // "Homing failed"
-  LSTR MSG_LCD_PROBING_FAILED             = _UxGT("探针探测失败");     // "Probing failed"
+  LSTR MSG_KILL_HOMING_FAILED             = _UxGT("归零失败");     // "Homing failed"
+  LSTR MSG_LCD_PROBING_FAILED             = _UxGT("Probing Failed");     // "Probing failed"
 
   LSTR MSG_MMU2_CHOOSE_FILAMENT_HEADER    = _UxGT("选择料");
   LSTR MSG_MMU2_MENU                      = _UxGT("MMU");

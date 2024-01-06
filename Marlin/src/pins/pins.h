@@ -786,6 +786,9 @@
 // Custom board (with custom PIO env)
 //
 
+#elif MB(AC_TRI_F103RE)
+  #include "stm32f1/pins_AC_TRI_F1_V1.h"        //      env:ac_tri_f1
+
 #elif MB(CUSTOM)
   #include "pins_custom.h"                      //                                        env:custom
 

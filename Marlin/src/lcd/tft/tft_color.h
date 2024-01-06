@@ -36,15 +36,18 @@
 #define COLOR_BLACK           0x0000  // #000000
 #define COLOR_WHITE           0xFFFF  // #FFFFFF
 #define COLOR_SILVER          0xC618  // #C0C0C0
-#define COLOR_GREY            0x7BEF  // #808080
+//#define COLOR_GREY            0x7BEF  // #808080 
+#define COLOR_GREY            0x4A69  // #4D4D4D
 #define COLOR_DARKGREY        0x4208  // #404040
 #define COLOR_DARKGREY2       0x39E7  // #303030
 #define COLOR_DARK            0x0003  // #000019
 
-#define COLOR_RED             0xF800  // #FF0000
+//#define COLOR_RED             0xF800  // #FF0000 F9C6
+#define COLOR_RED             0xF9C0  // #FF3A33
 #define COLOR_SCARLET         0xF904  // #FF2020
 #define COLOR_LIME            0x7E00  // #00FF00
-#define COLOR_BLUE            0x001F  // #0000FF
+//#define COLOR_BLUE            0x001F  // #0000FF
+#define COLOR_BLUE            0x445F  // #438DFF
 #define COLOR_LIGHT_BLUE      0x061F  // #00C3FF
 #define COLOR_YELLOW          0xFFE0  // #FFFF00
 #define COLOR_MAGENTA         0xF81F  // #FF00FF
@@ -57,7 +60,7 @@
 #define COLOR_DARK_PURPLE     0x9930  // #992380
 
 #define COLOR_MAROON          0x7800  // #800000
-#define COLOR_GREEN           0x03E0  // #008000
+#define COLOR_GREEN           0x3666  //0x03E0  // #008000
 #define COLOR_NAVY            0x000F  // #000080
 #define COLOR_OLIVE           0x8400  // #808000
 #define COLOR_PURPLE          0x8010  // #800080
@@ -71,10 +74,10 @@
 #define COLOR_DARK_PURPLE     0x9930  // #992380
 
 #ifndef COLOR_BACKGROUND
-  #define COLOR_BACKGROUND    0x20AC  // #1E156E
+  #define COLOR_BACKGROUND    COLOR_BLACK //0x20AC  // #1E156E
 #endif
 #ifndef COLOR_SELECTION_BG
-  #define COLOR_SELECTION_BG  0x9930  // #992380
+  #define COLOR_SELECTION_BG  COLOR_BLUE // 
 #endif
 #ifndef COLOR_WEBSITE_URL
   #define COLOR_WEBSITE_URL   0x03B7  // #0075BD
@@ -84,7 +87,7 @@
   #define COLOR_INACTIVE          COLOR_GREY
 #endif
 #ifndef COLOR_COLD
-  #define COLOR_COLD              COLOR_AQUA
+  #define  COLOR_COLD              COLOR_AQUA
 #endif
 #ifndef COLOR_HOTEND
   #define COLOR_HOTEND            COLOR_SCARLET
@@ -151,7 +154,7 @@
 #endif
 
 #ifndef COLOR_MENU_TEXT
-  #define COLOR_MENU_TEXT         COLOR_YELLOW
+  #define COLOR_MENU_TEXT         COLOR_WHITE
 #endif
 #ifndef COLOR_MENU_VALUE
   #define COLOR_MENU_VALUE        COLOR_WHITE
@@ -161,7 +164,7 @@
   #define COLOR_SLIDER            COLOR_WHITE
 #endif
 #ifndef COLOR_SLIDER_INACTIVE
-  #define COLOR_SLIDER_INACTIVE   COLOR_GREY
+  #define COLOR_SLIDER_INACTIVE   0xA554//COLOR_GREY
 #endif
 
 #ifndef COLOR_UBL

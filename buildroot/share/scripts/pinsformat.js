@@ -79,7 +79,7 @@ function process_text(txt) {
   if (!patt) return txt;
   const pindefPatt = new RegExp(`^(\\s*(//)?#define)\\s+([A-Z_][A-Z0-9_]+)\\s+(${patt.match})\\s*(//.*)?$`),
          noPinPatt = new RegExp(`^(\\s*(//)?#define)\\s+([A-Z_][A-Z0-9_]+)\\s+(-1)\\s*(//.*)?$`),
-          skipPatt = new RegExp('^(\\s*(//)?#define)\\s+(AT90USB|USBCON|BOARD_.+|.+_MACHINE_NAME|.+_SERIAL)\\s+(.+)\\s*(//.*)?$'),
+          skipPatt = new RegExp('^(\\s*(//)?#define)\\s+(AT90USB|BOARD_.+|.+_MACHINE_NAME|.+_SERIAL)\\s+(.+)\\s*(//.*)?$'),
          aliasPatt = new RegExp('^(\\s*(//)?#define)\\s+([A-Z_][A-Z0-9_]+)\\s+([A-Z_][A-Z0-9_()]+)\\s*(//.*)?$'),
         switchPatt = new RegExp('^(\\s*(//)?#define)\\s+([A-Z_][A-Z0-9_]+)\\s*(//.*)?$'),
          undefPatt = new RegExp('^(\\s*(//)?#undef)\\s+([A-Z_][A-Z0-9_]+)\\s*(//.*)?$'),

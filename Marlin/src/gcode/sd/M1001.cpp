@@ -29,6 +29,8 @@
 #include "../../module/printcounter.h"
 #include "../../module/temperature.h"
 #include "../../sd/cardreader.h"
+#include "../../lcd/marlinui.h"
+#include "../../lcd/menu/menu.h"
 
 #ifdef SD_FINISHED_RELEASECOMMAND
   #include "../queue.h"
@@ -109,6 +111,11 @@ void GcodeSuite::M1001() {
   #endif
 
   TERN_(EXTENSIBLE_UI, ExtUI::onPrintDone());
+  
+#if HAS_MARLINUI_MENU
+  ui.print_task_done = true;
+  ui.goto_screen(printinf_finish);
+#endif  
 
   // Re-select the last printed file in the UI
   TERN_(SD_REPRINT_LAST_SELECTED_FILE, ui.reselect_last_file());

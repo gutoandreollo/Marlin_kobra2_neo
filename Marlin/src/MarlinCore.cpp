@@ -27,8 +27,10 @@
  *  - https://github.com/kliment/Sprinter
  *  - https://github.com/grbl/grbl
  */
-
+#include "../src/lcd/tft/tft.h"
 #include "MarlinCore.h"
+#include "../src/HAL/STM32/autoGetZoffset.h"
+#include "../src/lcd/menu/menu.h"
 
 #include "HAL/shared/Delay.h"
 #include "HAL/shared/esp_wifi.h"
@@ -257,6 +259,7 @@
 PGMSTR(M112_KILL_STR, "M112 Shutdown");
 
 MarlinState marlin_state = MF_INITIALIZING;
+volatile HomingState homing_state;
 
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 bool wait_for_heatup = true;
@@ -361,7 +364,9 @@ void startOrResumeJob() {
   inline void abortSDPrinting() {
     IF_DISABLED(NO_SD_AUTOSTART, card.autofile_cancel());
     card.abortFilePrintNow(TERN_(SD_RESORT, true));
+	  wait_for_user = wait_for_heatup = false;
 
+	  thermalManager.heater_idle[0].reset();//Reset idle time;
     queue.clear();
     quickstop_stepper();
 
@@ -378,7 +383,10 @@ void startOrResumeJob() {
     #ifdef EVENT_GCODE_SD_ABORT
       queue.inject(F(EVENT_GCODE_SD_ABORT));
     #endif
-
+  
+	 //ui.clear_lcd();
+	//ui.return_to_status();
+	
     TERN_(PASSWORD_AFTER_SD_PRINT_ABORT, password.lock_machine());
   }
 
@@ -843,7 +851,7 @@ void idle(bool no_stepper_sleep/*=false*/) {
 
   // Handle UI input / draw events
   TERN(DWIN_CREALITY_LCD, DWIN_Update(), ui.update());
-
+  //ui.color_change();
   // Run i2c Position Encoders
   #if ENABLED(I2C_POSITION_ENCODERS)
   {
@@ -891,6 +899,9 @@ void idle(bool no_stepper_sleep/*=false*/) {
  * After this the machine will need to be reset.
  */
 void kill(FSTR_P const lcd_error/*=nullptr*/, FSTR_P const lcd_component/*=nullptr*/, const bool steppers_off/*=false*/) {
+  
+  WRITE(POWER_CTRL_PIN,LOW);
+
   thermalManager.disable_all_heaters();
 
   TERN_(HAS_CUTTER, cutter.kill()); // Full cutter shutdown including ISR control
@@ -1061,26 +1072,26 @@ inline void tmc_standby_setup() {
  *  - Install Marlin custom Exception Handlers, if set.
  *  - Init Marlin's HAL interfaces (for SPI, i2c, etc.)
  *  - Init some optional hardware and features:
- *    • MAX Thermocouple pins
- *    • Duet Smart Effector
- *    • Filament Runout Sensor
- *    • TMC220x Stepper Drivers (Serial)
- *    • PSU control
- *    • Power-loss Recovery
- *    • Stepper Driver Reset: DISABLE
- *    • TMC Stepper Drivers (SPI)
- *    • Run hal.init_board() for additional pins setup
- *    • ESP WiFi
+ *    �?MAX Thermocouple pins
+ *    �?Duet Smart Effector
+ *    �?Filament Runout Sensor
+ *    �?TMC220x Stepper Drivers (Serial)
+ *    �?PSU control
+ *    �?Power-loss Recovery
+ *    �?Stepper Driver Reset: DISABLE
+ *    �?TMC Stepper Drivers (SPI)
+ *    �?Run hal.init_board() for additional pins setup
+ *    �?ESP WiFi
  *  - Get the Reset Reason and report it
  *  - Print startup messages and diagnostics
  *  - Calibrate the HAL DELAY for precise timing
  *  - Init the buzzer, possibly a custom timer
  *  - Init more optional hardware:
- *    • Color LED illumination
- *    • Neopixel illumination
- *    • Controller Fan
- *    • Creality DWIN LCD (show boot image)
- *    • Tare the Probe if possible
+ *    �?Color LED illumination
+ *    �?Neopixel illumination
+ *    �?Controller Fan
+ *    �?Creality DWIN LCD (show boot image)
+ *    �?Tare the Probe if possible
  *  - Mount the (most likely external) SD Card
  *  - Load settings from EEPROM (or use defaults)
  *  - Init the Ethernet Port
@@ -1088,39 +1099,39 @@ inline void tmc_standby_setup() {
  *  - Adjust the (certainly wrong) current position by the home offset
  *  - Init the Planner::position (steps) based on current (native) position
  *  - Initialize more managers and peripherals:
- *    • Temperatures
- *    • Print Job Timer
- *    • Endstops and Endstop Interrupts
- *    • Stepper ISR - Kind of Important!
- *    • Servos
- *    • Servo-based Probe
- *    • Photograph Pin
- *    • Laser/Spindle tool Power / PWM
- *    • Coolant Control
- *    • Bed Probe
- *    • Stepper Driver Reset: ENABLE
- *    • Digipot I2C - Stepper driver current control
- *    • Stepper DAC - Stepper driver current control
- *    • Solenoid (probe, or for other use)
- *    • Home Pin
- *    • Custom User Buttons
- *    • Red/Blue Status LEDs
- *    • Case Light
- *    • Prusa MMU filament changer
- *    • Fan Multiplexer
- *    • Mixing Extruder
- *    • BLTouch Probe
- *    • I2C Position Encoders
- *    • Custom I2C Bus handlers
- *    • Enhanced tools or extruders:
- *      • Switching Extruder
- *      • Switching Nozzle
- *      • Parking Extruder
- *      • Magnetic Parking Extruder
- *      • Switching Toolhead
- *      • Electromagnetic Switching Toolhead
- *    • Watchdog Timer - Also Kind of Important!
- *    • Closed Loop Controller
+ *    �?Temperatures
+ *    �?Print Job Timer
+ *    �?Endstops and Endstop Interrupts
+ *    �?Stepper ISR - Kind of Important!
+ *    �?Servos
+ *    �?Servo-based Probe
+ *    �?Photograph Pin
+ *    �?Laser/Spindle tool Power / PWM
+ *    �?Coolant Control
+ *    �?Bed Probe
+ *    �?Stepper Driver Reset: ENABLE
+ *    �?Digipot I2C - Stepper driver current control
+ *    �?Stepper DAC - Stepper driver current control
+ *    �?Solenoid (probe, or for other use)
+ *    �?Home Pin
+ *    �?Custom User Buttons
+ *    �?Red/Blue Status LEDs
+ *    �?Case Light
+ *    �?Prusa MMU filament changer
+ *    �?Fan Multiplexer
+ *    �?Mixing Extruder
+ *    �?BLTouch Probe
+ *    �?I2C Position Encoders
+ *    �?Custom I2C Bus handlers
+ *    �?Enhanced tools or extruders:
+ *      �?Switching Extruder
+ *      �?Switching Nozzle
+ *      �?Parking Extruder
+ *      �?Magnetic Parking Extruder
+ *      �?Switching Toolhead
+ *      �?Electromagnetic Switching Toolhead
+ *    �?Watchdog Timer - Also Kind of Important!
+ *    �?Closed Loop Controller
  *  - Run Startup Commands, if defined
  *  - Tell host to close Host Prompts
  *  - Test Trinamic driver connections
@@ -1242,6 +1253,7 @@ void setup() {
 
   #if HAS_FILAMENT_SENSOR
     SETUP_RUN(runout.setup());
+  	SERIAL_ECHOLNPGM("get_state_original:",runout.get_state_original());
   #endif
 
   #if HAS_TMC220x
@@ -1644,7 +1656,13 @@ void setup() {
   #if ENABLED(BD_SENSOR)
     SETUP_RUN(bdl.init(I2C_BD_SDA_PIN, I2C_BD_SCL_PIN, I2C_BD_DELAY));
   #endif
-
+  
+  #if ENABLED(LEVEING_CALIBRATION_MODULE)
+  	autoProbe.load_config();
+  	autoProbe.up_error_count = 0;
+	  autoProbe.down_error_count =0;
+  #endif
+  
   marlin_state = MF_RUNNING;
 
   SETUP_LOG("setup() completed.");
@@ -1665,9 +1683,15 @@ void setup() {
  *    card, host, or by direct injection. The queue will continue to fill
  *    as long as idle() or manage_inactivity() are being called.
  */
+extern bool z_dir_up_error_state;
+extern bool z_dir_down_error_state;
+extern uint8_t steps_dir;
+
 void loop() {
   do {
+
     idle();
+
 
     #if ENABLED(SDSUPPORT)
       if (card.flag.abort_sd_printing) abortSDPrinting();
@@ -1685,6 +1709,18 @@ void loop() {
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
 
     TERN_(MARLIN_TEST_BUILD, runPeriodicTests());
+  //  static millis_t print_ms = 0;
+	//   if(ELAPSED(millis(), print_ms)){
+  //    print_ms = millis()+ 5000;
+  //    SERIAL_ECHOLNPGM("external_call:",external_call,",internal_call:",internal_call);
+  //  }
+
+    // gcode.process_subcommands_now(F("G1 F1200 Z0.2\nG1 F1200 Z0"));
+  
+    // DELAY_NS(200);
+
+    //safe_delay(1000);
+    //tft.fill(0,0,320,240,0x1234);
 
   } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
 }

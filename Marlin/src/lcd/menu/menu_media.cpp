@@ -25,6 +25,8 @@
 //
 
 #include "../../inc/MarlinConfigPre.h"
+#include "../../HAL/STM32/autoGetZoffset.h"
+#include "../../gcode/queue.h"
 
 #if BOTH(HAS_MARLINUI_MENU, SDSUPPORT)
 
@@ -54,9 +56,21 @@ void lcd_sd_updir() {
 #endif
 
 inline void sdcard_start_selected_file() {
+  //gcode.process_subcommands_now(F("G28XY"));
+  recovery.info.sdpos = 0;
+  autoProbe.swtich_cool_fan = true;
+  autoProbe.down_error_count = 0;
+  autoProbe.up_error_count = 0;
+  feedrate_percentage = 100;
+  ui.real_duration_state = false;
+  runout.filament_ran_out = false;//Clear status each time you print
+  ui.start_print_status = true;
   card.openAndPrintFile(card.filename);
+  ui.clear_all = true;
   ui.return_to_status();
   ui.reset_status();
+  ui.clear_all = false;
+  ui.seclect = 4;
 }
 
 class MenuItem_sdfile : public MenuItem_sdbase {
@@ -72,7 +86,7 @@ class MenuItem_sdfile : public MenuItem_sdbase {
         sd_items = screen_items;
       #endif
       #if ENABLED(SD_MENU_CONFIRM_START)
-        MenuItem_submenu::action(fstr, []{
+          MenuItem_submenu::action(fstr, []{
           char * const longest = card.longest_filename();
           char buffer[strlen(longest) + 2];
           buffer[0] = ' ';
@@ -80,7 +94,7 @@ class MenuItem_sdfile : public MenuItem_sdbase {
           MenuItem_confirm::select_screen(
             GET_TEXT_F(MSG_BUTTON_PRINT), GET_TEXT_F(MSG_BUTTON_CANCEL),
             sdcard_start_selected_file, nullptr,
-            GET_TEXT_F(MSG_START_PRINT), buffer, F("?")
+            GET_TEXT_F(MSG_START_PRINT), buffer, nullptr
           );
         });
       #else
@@ -108,6 +122,8 @@ class MenuItem_sdfolder : public MenuItem_sdbase {
 void menu_media_filelist() {
   ui.encoder_direction_menus();
 
+  const bool  card_detected = !card.isMounted();
+ 
   #if HAS_MARLINUI_U8GLIB
     static uint16_t fileCnt;
     if (ui.first_page) fileCnt = card.get_num_Files();
@@ -115,11 +131,27 @@ void menu_media_filelist() {
     const uint16_t fileCnt = card.get_num_Files();
   #endif
 
+ 
+ static int8_t temp_thisItemNr = 0;
   START_MENU();
+   if(card_detected) {
+      encoderLine = encoderTopLine = 0;
+      if(temp_thisItemNr) {
+        _menuLineNr = _thisItemNr = 0;
+        if(_thisItemNr == 0) {
+          temp_thisItemNr = 0;
+          ui.refresh();
+        }
+      }
+    }
+    else{
+      temp_thisItemNr = encoderLine;    
+    }
+
   #if ENABLED(MULTI_VOLUME)
     ACTION_ITEM(MSG_BACK, []{ ui.goto_screen(menu_media); });
   #else
-    BACK_ITEM_F(TERN1(BROWSE_MEDIA_ON_INSERT, screen_history_depth) ? GET_TEXT_F(MSG_MAIN) : GET_TEXT_F(MSG_BACK));
+    BACK_ITEM_F(TERN1(BROWSE_MEDIA_ON_INSERT, screen_history_depth) ? GET_TEXT_F(MSG_INFO_SCREEN) : GET_TEXT_F(MSG_BACK));
   #endif
   if (card.flag.workDirIsRoot) {
     #if !HAS_SD_DETECT
@@ -132,8 +164,9 @@ void menu_media_filelist() {
   if (ui.should_draw()) for (uint16_t i = 0; i < fileCnt; i++) {
     if (_menuLineNr == _thisItemNr) {
       card.getfilename_sorted(SD_ORDER(i, fileCnt));
-      if (card.flag.filenameIsDir)
-        MENU_ITEM(sdfolder, MSG_MEDIA_MENU, card);
+      if (card.flag.filenameIsDir){
+        //MENU_ITEM(sdfolder, MSG_MEDIA_MENU, card);
+      }
       else
         MENU_ITEM(sdfile, MSG_MEDIA_MENU, card);
     }
